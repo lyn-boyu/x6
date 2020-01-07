@@ -1,6 +1,7 @@
+import { Platform } from '../util'
+import { DomEvent } from '../dom'
 import { hook } from './decorator'
-import { IMouseHandler } from '../handler'
-import { DomEvent, MouseEventEx, detector } from '../common'
+import { IMouseHandler, MouseEventEx } from '../handler'
 import { BaseGraph } from './base-graph'
 
 export class EventLoopAccessor extends BaseGraph {
@@ -37,7 +38,7 @@ export class EventLoopAccessor extends BaseGraph {
 
   @hook()
   isToggleEvent(e: MouseEvent) {
-    return detector.IS_MAC ? DomEvent.isMetaDown(e) : DomEvent.isControlDown(e)
+    return Platform.IS_MAC ? DomEvent.isMetaDown(e) : DomEvent.isControlDown(e)
   }
 
   @hook()

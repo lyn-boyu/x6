@@ -1,7 +1,8 @@
-import * as util from '../util'
+import { StringExt } from '../util'
+import { Point, Rectangle } from '../geometry'
 import { Cell } from '../core/cell'
-import { Point, Rectangle } from '../struct'
 import { BaseManager } from './base-manager'
+import { globals } from '../option'
 
 export class SizeManager extends BaseManager {
   autoSizeCell(cell: Cell, recurse: boolean) {
@@ -124,12 +125,12 @@ export class SizeManager extends BaseManager {
       let value = this.renderer.getLabel(state)
       if (value != null && typeof value === 'string' && value.length > 0) {
         if (!this.graph.isHtmlLabel(state.cell)) {
-          value = util.escape(value)
+          value = StringExt.escape(value)
         }
 
         value = value.replace(/\n/g, '<br>')
 
-        const size = util.getSizeForString(value, fontSize, style.fontFamily)
+        const size = this.getSizeForString(value, fontSize, style.fontFamily)
         let width = size.width + dx
         let height = size.height + dy
 
@@ -153,6 +154,44 @@ export class SizeManager extends BaseManager {
     }
 
     return result
+  }
+
+  getSizeForString(
+    text: string,
+    fontSize: number = globals.defaultFontSize,
+    fontFamily: string = globals.defaultFontFamily,
+    textWidth?: number,
+  ) {
+    const div = document.createElement('div')
+
+    div.style.fontFamily = fontFamily
+    div.style.fontSize = `${Math.round(fontSize)}px`
+    div.style.lineHeight = `${Math.round(fontSize * globals.defaultLineHeight)}`
+
+    // Disables block layout and outside wrapping and hides the div
+    div.style.position = 'absolute'
+    div.style.visibility = 'hidden'
+    div.style.display = 'inline-block'
+    div.style.zoom = '1'
+
+    if (textWidth != null) {
+      div.style.width = `${textWidth}px`
+      div.style.whiteSpace = 'normal'
+    } else {
+      div.style.whiteSpace = 'nowrap'
+    }
+
+    div.innerHTML = text
+    document.body.appendChild(div)
+
+    const size = {
+      width: div.offsetWidth,
+      height: div.offsetHeight,
+    }
+
+    document.body.removeChild(div)
+
+    return size
   }
 
   resizeCells(cells: Cell[], bounds: Rectangle[], recurse: boolean) {
@@ -355,7 +394,7 @@ export class SizeManager extends BaseManager {
             const overlap = this.graph.getOverlap(cell)
 
             if (overlap > 0) {
-              area = Rectangle.clone(area)
+              area = area.clone()
 
               area.x -= area.width * overlap
               area.y -= area.height * overlap
@@ -367,8 +406,7 @@ export class SizeManager extends BaseManager {
             if (max == null) {
               max = area
             } else {
-              max = Rectangle.clone(max)
-              max.intersect(area)
+              max = max.intersect(area)
             }
           }
         }
@@ -511,7 +549,7 @@ export class SizeManager extends BaseManager {
         const bbox = this.view.getBoundingBox(this.view.getState(cell), true)
         if (bbox != null) {
           if (result == null) {
-            result = Rectangle.clone(bbox)
+            result = bbox.clone()
           } else {
             result.add(bbox)
           }

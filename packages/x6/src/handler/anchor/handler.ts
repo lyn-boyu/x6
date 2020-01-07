@@ -1,10 +1,11 @@
-import * as util from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Point, Rectangle } from '../../geometry'
 import { Graph } from '../../graph'
 import { State } from '../../core/state'
 import { Shape } from '../../shape'
-import { BaseHandler } from '../handler-base'
-import { Rectangle, Point, Anchor } from '../../struct'
-import { DomEvent, MouseEventEx, Disposable } from '../../common'
+import { BaseHandler } from '../base-handler'
+import { MouseEventEx } from '../mouse-event'
+import { Anchor } from '../../struct'
 import { createAnchorShape, createAnchorHighlightShape } from './option'
 
 export class AnchorHandler extends BaseHandler {
@@ -95,7 +96,7 @@ export class AnchorHandler extends BaseHandler {
         cell: state.cell,
       })
       icon.init(this.graph.view.getDecoratorPane())
-      util.toBack(icon.elem)
+      DomUtil.toBack(icon.elem)
 
       const getState = () => this.currentState || state
       MouseEventEx.redirectMouseEvents(icon.elem, this.graph, getState)
@@ -290,7 +291,7 @@ export class AnchorHandler extends BaseHandler {
         this.currentArea.add(icon.bounds)
       }
 
-      this.currentArea.grow(this.getTolerance(e))
+      this.currentArea.inflate(this.getTolerance(e))
     } else {
       this.destroyIcons()
       this.destroyHighlight()
@@ -330,7 +331,7 @@ export class AnchorHandler extends BaseHandler {
     }
   }
 
-  @Disposable.aop()
+  @BaseHandler.dispose()
   dispose() {
     this.reset()
 

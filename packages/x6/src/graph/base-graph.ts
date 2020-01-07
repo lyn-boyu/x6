@@ -1,4 +1,6 @@
-import * as util from '../util'
+import { Rectangle } from '../geometry'
+import { FunctionExt } from '../util'
+import { Disablable } from '../entity'
 import { Route } from '../route'
 import { Model } from '../core/model'
 import { Cell } from '../core/cell'
@@ -6,9 +8,8 @@ import { View } from '../core/view'
 import { State } from '../core/state'
 import { Renderer } from '../core/renderer'
 import { FullOptions } from '../option'
-import { Disablable, Disposable } from '../common'
 import { Dialect, Style, Size } from '../types'
-import { Rectangle, Multiplicity, Image } from '../struct'
+import { Multiplicity, Image } from '../struct'
 import {
   CellEditor,
   TooltipHandler,
@@ -248,7 +249,7 @@ export class BaseGraph extends Disablable<EventArgs>
       result = this.createEdgeSegmentHandler(state)
     } else {
       return (
-        util.call(this.options.createEdgeHandler, this, this, state) ||
+        FunctionExt.call(this.options.createEdgeHandler, this, this, state) ||
         new EdgeHandler(this as any, state)
       )
     }
@@ -307,7 +308,7 @@ export class BaseGraph extends Disablable<EventArgs>
     this.mouseWheelHandler.dispose()
   }
 
-  @Disposable.aop()
+  @Disablable.dispose()
   dispose() {
     this.disposeManagers()
     this.disposeHandlers()

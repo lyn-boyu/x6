@@ -1,7 +1,7 @@
-import * as util from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
 import { Graph } from '../../graph'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, DomEvent, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 
 export class PanningHandler extends MouseHandler<PanningHandler.EventArgs> {
   /**
@@ -83,7 +83,7 @@ export class PanningHandler extends MouseHandler<PanningHandler.EventArgs> {
 
     // Handles force panning event
     this.forcePanningHandler = ({ eventName, e }) => {
-      if (eventName === DomEvent.MOUSE_DOWN && this.isForcePanningEvent(e)) {
+      if (eventName === 'mouseDown' && this.isForcePanningEvent(e)) {
         this.start(e)
         this.active = true
         this.trigger('panStart', { e })
@@ -207,7 +207,7 @@ export class PanningHandler extends MouseHandler<PanningHandler.EventArgs> {
       this.isPanningTrigger(e)
     ) {
       this.start(e)
-      this.consume(e, DomEvent.MOUSE_DOWN)
+      this.consume(e, 'mouseDown')
     }
   }
 
@@ -250,7 +250,7 @@ export class PanningHandler extends MouseHandler<PanningHandler.EventArgs> {
         // Ignores if scrollbars have been used for panning
         if (
           !this.graph.useScrollbarsForPanning ||
-          !util.hasScrollbars(this.graph.container)
+          !DomUtil.hasScrollbars(this.graph.container)
         ) {
           const s = this.graph.view.scale
           const t = this.graph.view.translate
@@ -274,7 +274,7 @@ export class PanningHandler extends MouseHandler<PanningHandler.EventArgs> {
     this.mouseDownEvent = null
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
     this.graph.off('mouseEvent', this.forcePanningHandler)

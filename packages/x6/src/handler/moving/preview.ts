@@ -1,11 +1,11 @@
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
 import * as movment from './util'
+import { Disposable } from '../../entity'
 import { Cell } from '../../core/cell'
 import { MovingHandler } from './handler'
 import { CellHighlight } from '../cell-highlight'
 import { RectangleShape } from '../../shape'
-import { Rectangle, Point } from '../../struct'
-import { Disposable, MouseEventEx } from '../../common'
+import { MouseEventEx } from '../mouse-event'
 import { applyConnectionHighlightStyle } from '../connection/option'
 import {
   applyMovingPreviewStyle,
@@ -66,7 +66,7 @@ export class Preview extends Disposable {
   start(e: MouseEventEx) {
     this.cell = this.master.getCell(e)!
     this.cells = movment.getCells(this.master, this.cell, e)
-    this.origin = util.clientToGraph(this.graph.container, e)
+    this.origin = this.graph.clientToGraph(e)
     this.updateBounds()
   }
 
@@ -283,7 +283,7 @@ export class Preview extends Disposable {
     this.target = null
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     this.reset()
   }

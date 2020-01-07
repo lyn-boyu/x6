@@ -1,16 +1,20 @@
-import * as util from '../util'
+import { Point, Line, Rectangle } from '../geometry'
+import { Platform, NumberExt } from '../util'
+import { DomEvent, DomUtil } from '../dom'
+import { Basecoat } from '../entity'
 import { Cell } from './cell'
 import { State } from './state'
 import { Graph } from '../graph'
-import { Geometry } from './geometry'
 import { Route } from '../route'
+import { NodeType } from '../enum'
+import { Geometry } from './geometry'
 import { Perimeter } from '../perimeter'
 import { RectangleShape } from '../shape'
 import { UndoableEdit, CurrentRootChange } from '../change'
-import { Point, Rectangle, Anchor, NodeType } from '../struct'
-import { detector, DomEvent, MouseEventEx, Primer, Disposable } from '../common'
+import { Anchor } from '../struct'
+import { MouseEventEx } from '../handler'
 
-export class View extends Primer<View.EventArgs> {
+export class View extends Basecoat<View.EventArgs> {
   graph: Graph
   scale: number
   translate: Point
@@ -471,11 +475,11 @@ export class View extends Primer<View.EventArgs> {
 
     // Apply ratation when relative and parent is node.
     if (geo.relative && pState != null && !this.model.isEdge(parent)) {
-      const rot = util.getRotation(pState)
+      const rot = State.getRotation(pState)
       if (rot !== 0) {
         const nodeCenter = state.bounds.getCenter()
         const parentCenter = pState.bounds.getCenter()
-        const pt = util.rotatePoint(nodeCenter, rot, parentCenter)
+        const pt = Point.rotate(nodeCenter, rot, parentCenter)
         state.bounds.x = pt.x - state.bounds.width / 2
         state.bounds.y = pt.y - state.bounds.height / 2
       }
@@ -683,7 +687,7 @@ export class View extends Primer<View.EventArgs> {
 
       if (anchor.perimeter) {
         if (r1 !== 0) {
-          result = util.rotatePoint(result, r1, cx)
+          result.rotate(r1, cx)
         }
 
         result = this.getPerimeterPoint(terminalState, result, false)
@@ -691,8 +695,8 @@ export class View extends Primer<View.EventArgs> {
         r2 += r1
 
         if (this.model.isNode(terminalState.cell)) {
-          const flipH = util.isFlipH(terminalState)
-          const flipV = util.isFlipV(terminalState)
+          const flipH = State.isFlipH(terminalState)
+          const flipV = State.isFlipV(terminalState)
 
           if (flipH) {
             result.x = 2 * bounds.getCenterX() - result.x
@@ -706,7 +710,7 @@ export class View extends Primer<View.EventArgs> {
 
       // Generic rotation after projection on perimeter
       if (r2 !== 0 && result != null) {
-        result = util.rotatePoint(result, r2, cx)
+        result.rotate(r2, cx)
       }
     }
 
@@ -823,7 +827,7 @@ export class View extends Primer<View.EventArgs> {
       state.shape.stencil != null &&
       state.shape.stencil.aspect === 'fixed'
     ) {
-      previous = Rectangle.clone(state.bounds)
+      previous = state.bounds.clone()
       const asp = state.shape.stencil.computeAspect(
         state.shape,
         state.bounds.x,
@@ -904,14 +908,14 @@ export class View extends Primer<View.EventArgs> {
     // tslint:disable-next-line:no-parameter-reassignment
     relateState = this.getTerminalPortState(edgeState, relateState, isSource)
 
-    const rot = util.getRotation(relateState)
+    const rot = State.getRotation(relateState)
     const orth = this.graph.connectionManager.isOrthogonal(edgeState)
     const center = relateState.bounds.getCenter()
 
-    let nextPoint = this.getNextPoint(edgeState, opposeState, isSource)
-    if (rot !== 0) {
+    const nextPoint = this.getNextPoint(edgeState, opposeState, isSource)
+    if (rot !== 0 && nextPoint != null) {
       // rotate with related cell
-      nextPoint = util.rotatePoint(nextPoint!, -rot, center)
+      nextPoint.rotate(-rot, center)
     }
 
     let border = edgeState.style.perimeterSpacing || 0
@@ -922,15 +926,15 @@ export class View extends Primer<View.EventArgs> {
 
     border = isNaN(border) || !isFinite(border) ? 0 : border
 
-    let p = this.getPerimeterPoint(
+    const p = this.getPerimeterPoint(
       relateState,
       nextPoint!,
       rot === 0 && orth,
       border,
     )
 
-    if (rot !== 0) {
-      p = util.rotatePoint(p!, rot, center)
+    if (rot !== 0 && p != null) {
+      p.rotate(rot, center)
     }
 
     return p
@@ -991,8 +995,8 @@ export class View extends Primer<View.EventArgs> {
           let flipV = false
 
           if (this.graph.model.isNode(terminalState.cell)) {
-            flipH = util.isFlipH(terminalState)
-            flipV = util.isFlipV(terminalState)
+            flipH = State.isFlipH(terminalState)
+            flipV = State.isFlipV(terminalState)
 
             if (flipH) {
               result.x = 2 * bounds.getCenterX() - result.x
@@ -1345,7 +1349,7 @@ export class View extends Primer<View.EventArgs> {
         // Works which line segment the point of the label is closest to
         let p0 = edgeState.absolutePoints[0]!
         let pe = edgeState.absolutePoints[1]!
-        let minDist = util.ptSegmentDist(p0.x, p0.y, pe.x, pe.y, x, y)
+        let minDist = new Line(p0, pe).pointSquaredDistance(x, y)
 
         let tmp = 0
         let index = 0
@@ -1354,7 +1358,7 @@ export class View extends Primer<View.EventArgs> {
         for (let i = 2; i < pointCount; i += 1) {
           tmp += segments[i - 2]
           pe = edgeState.absolutePoints[i]!
-          const dist = util.ptSegmentDist(p0.x, p0.y, pe.x, pe.y, x, y)
+          const dist = new Line(p0, pe).pointSquaredDistance(x, y)
 
           if (dist <= minDist) {
             minDist = dist
@@ -1402,10 +1406,9 @@ export class View extends Primer<View.EventArgs> {
           projlen = seg
         }
 
-        let yDistance = Math.sqrt(
-          util.ptSegmentDist(p0.x, p0.y, pe.x, pe.y, x, y),
-        )
-        const direction = util.relativeCcw(p0.x, p0.y, pe.x, pe.y, x, y)
+        const line = new Line(p0, pe)
+        let yDistance = line.pointDistance(x, y)
+        const direction = line.relativeCcw(x, y)
         if (direction === -1) {
           yDistance = -yDistance
         }
@@ -1597,7 +1600,7 @@ export class View extends Primer<View.EventArgs> {
   validateBackgroundStyle() {
     const graph = this.graph
     const bgColor = graph.getBackgroundColor() || ''
-    let bgImage: string = ''
+    let bgGridImage: string = ''
     let bgPosition: string = ''
 
     if (
@@ -1606,7 +1609,7 @@ export class View extends Primer<View.EventArgs> {
       graph.getGridType() != null &&
       graph.getGridColor() != null
     ) {
-      bgImage = util.createGrid({
+      bgGridImage = View.createGrid({
         type: graph.getGridType(),
         size: graph.getGridSize() * this.scale,
         minSize: graph.getGridMinSize(),
@@ -1627,8 +1630,8 @@ export class View extends Primer<View.EventArgs> {
         ox = 1 + bounds.x
         oy = 1 + bounds.y
       }
-      ox = -Math.round(phase - util.mod(t.x * s - ox, phase))
-      oy = -Math.round(phase - util.mod(t.y * s - oy, phase))
+      ox = -Math.round(phase - NumberExt.mod(t.x * s - ox, phase))
+      oy = -Math.round(phase - NumberExt.mod(t.y * s - oy, phase))
     }
 
     bgPosition = `${ox}px ${oy}px`
@@ -1641,13 +1644,13 @@ export class View extends Primer<View.EventArgs> {
     if (this.backgroundPageShape != null) {
       const page = this.backgroundPageShape.elem!
       page.style.backgroundColor = bgColor
-      page.style.backgroundImage = bgImage
+      page.style.backgroundImage = bgGridImage
       page.style.backgroundPosition = bgPosition
       canvas.style.backgroundImage = ''
       canvas.style.backgroundColor = ''
       canvas.style.backgroundPosition = ''
     } else {
-      canvas.style.backgroundImage = bgImage
+      canvas.style.backgroundImage = bgGridImage
       canvas.style.backgroundColor = bgColor
       canvas.style.backgroundPosition = bgPosition
     }
@@ -1710,7 +1713,7 @@ export class View extends Primer<View.EventArgs> {
     if (
       this.graph.infinite &&
       this.graph.container &&
-      util.hasScrollbars(this.graph.container)
+      DomUtil.hasScrollbars(this.graph.container)
     ) {
       const size = this.graph.viewportManager.getPageSize()
       const padding = this.graph.viewportManager.getPagePadding()
@@ -1865,7 +1868,7 @@ export class View extends Primer<View.EventArgs> {
     }
 
     // Support for touch device gestures (eg. pinch to zoom)
-    if (detector.SUPPORT_TOUCH) {
+    if (Platform.SUPPORT_TOUCH) {
       DomEvent.addListener(container, 'gesturestart', (e: MouseEvent) => {
         graph.eventloopManager.gesture(e)
         DomEvent.consume(e)
@@ -1889,11 +1892,11 @@ export class View extends Primer<View.EventArgs> {
         if (
           this.isContainerEvent(e) &&
           // Avoid scrollbar events starting a rubberband selection
-          ((!detector.IS_IE &&
-            !detector.IS_IE11 &&
-            !detector.IS_CHROME &&
-            !detector.IS_OPERA &&
-            !detector.IS_SAFARI) ||
+          ((!Platform.IS_IE &&
+            !Platform.IS_IE11 &&
+            !Platform.IS_CHROME &&
+            !Platform.IS_OPERA &&
+            !Platform.IS_SAFARI) ||
             !this.isScrollEvent(e))
         ) {
           graph.dispatchMouseEvent(DomEvent.MOUSE_DOWN, new MouseEventEx(e))
@@ -1946,13 +1949,10 @@ export class View extends Primer<View.EventArgs> {
       // Workaround for touch events which started on some DOM node
       // on top of the container, in which case the cells under the
       // mouse for the move and up events are not detected.
-      if (detector.SUPPORT_TOUCH) {
-        const x = DomEvent.getClientX(e)
-        const y = DomEvent.getClientY(e)
-
+      if (Platform.SUPPORT_TOUCH) {
         // Dispatches the drop event to the graph which
         // consumes and executes the source function
-        const p = util.clientToGraph(container, x, y)
+        const p = graph.clientToGraph(e)
         state = graph.view.getState(graph.getCellAt(p.x, p.y))
       }
 
@@ -1997,7 +1997,7 @@ export class View extends Primer<View.EventArgs> {
   }
 
   protected isContainerVisible() {
-    return util.isVisible(this.graph.container)
+    return DomUtil.isVisible(this.graph.container)
   }
 
   /**
@@ -2025,7 +2025,7 @@ export class View extends Primer<View.EventArgs> {
    * of the container in IE. Such events are ignored.
    */
   protected isScrollEvent(e: MouseEvent) {
-    const offset = util.getOffset(this.graph.container)
+    const offset = DomUtil.getOffset(this.graph.container)
     const pt = new Point(e.clientX - offset.x, e.clientY - offset.y)
 
     const outWidth = this.graph.container.offsetWidth
@@ -2070,7 +2070,7 @@ export class View extends Primer<View.EventArgs> {
   }
 
   protected createHtmlPane(width?: string, height?: string) {
-    const div = util.createElement('div')
+    const div = DomUtil.createElement('div')
     if (width != null && height != null) {
       div.style.position = 'absolute'
       div.style.left = '0px'
@@ -2117,7 +2117,7 @@ export class View extends Primer<View.EventArgs> {
     this.stage.appendChild(this.overlayPane)
     this.stage.appendChild(this.decoratorPane)
 
-    const root = util.createSvgElement('svg')
+    const root = DomUtil.createSvgElement('svg')
     root.style.left = '0px'
     root.style.top = '0px'
     root.style.width = '100%'
@@ -2125,7 +2125,7 @@ export class View extends Primer<View.EventArgs> {
     root.style.display = 'block'
     root.appendChild(this.stage)
 
-    if (detector.IS_IE || detector.IS_IE11) {
+    if (Platform.IS_IE || Platform.IS_IE11) {
       root.style.overflow = 'hidden'
     }
 
@@ -2136,17 +2136,17 @@ export class View extends Primer<View.EventArgs> {
   }
 
   protected createSvgPane() {
-    return util.createSvgElement('g') as SVGGElement
+    return DomUtil.createSvgElement('g') as SVGGElement
   }
 
   protected updateContainerStyle(container: HTMLElement) {
-    const position = util.getComputedStyle(container, 'position')
+    const position = DomUtil.getComputedStyle(container, 'position')
     if (position === 'static') {
       container.style.position = 'relative'
     }
 
     // Disables built-in pan and zoom in IE10 and later
-    if (detector.SUPPORT_POINTER) {
+    if (Platform.SUPPORT_POINTER) {
       container.style.touchAction = 'none'
     }
   }
@@ -2194,7 +2194,7 @@ export class View extends Primer<View.EventArgs> {
     return root
   }
 
-  @Disposable.aop()
+  @Basecoat.dispose()
   dispose() {
     let stage: SVGSVGElement | HTMLDivElement | null =
       this.stage != null ? (this.stage as SVGElement).ownerSVGElement : null
@@ -2214,7 +2214,7 @@ export class View extends Primer<View.EventArgs> {
       )
 
       DomEvent.release(this.graph.container)
-      util.removeElement(stage)
+      DomUtil.remove(stage)
 
       this.mouseMoveHandler = null
       this.mouseUpHandler = null
@@ -2255,5 +2255,107 @@ export namespace View {
     scale: ScaleArgs
     translate: TranslateArgs
     scaleAndTranslate: ScaleAndTranslateArgs
+  }
+}
+
+export namespace View {
+  export type GridType = 'line' | 'dot'
+
+  export interface CreateGridOptions {
+    id: string
+    size: number
+    minSize: number
+    color: string
+    step: number
+    type: GridType
+  }
+
+  const defaults: CreateGridOptions = {
+    id: 'x6-graph-grid',
+    size: 10,
+    step: 4,
+    minSize: 4,
+    color: '#e0e0e0',
+    type: 'line',
+  }
+
+  export function createGrid(options: Partial<CreateGridOptions> = {}) {
+    const opts: CreateGridOptions = { ...defaults, ...options }
+    fixSize(opts)
+
+    const svg =
+      opts.type === 'line' ? createLineGrid(opts) : createDotGrid(opts)
+    return base64(svg)
+  }
+
+  function createLineGrid(options: CreateGridOptions) {
+    const gridSize = options.size
+    const blockSize = options.size * options.step
+    const d = []
+    for (let i = 1, ii = options.step; i < ii; i += 1) {
+      const tmp = i * gridSize
+      d.push(
+        `M 0 ${tmp} L ${blockSize} ${tmp} M ${tmp} 0 L ${tmp} ${blockSize}`,
+      )
+    }
+
+    const content = `
+      <path
+        d="${d.join(' ')}"
+        fill="none"
+        opacity="0.2"
+        stroke="${options.color}"
+        stroke-width="1"
+      />
+      <path
+        d="M ${blockSize} 0 L 0 0 0 ${blockSize}"
+        fill="none"
+        stroke="${options.color}"
+        stroke-width="1"
+      />
+    `
+
+    return wrap(options.id, blockSize, content)
+  }
+
+  function createDotGrid(options: CreateGridOptions) {
+    const content = `<rect width="1" height="1" fill="${options.color}"/>`
+    return wrap(options.id, options.size, content)
+  }
+
+  function fixSize(options: CreateGridOptions) {
+    let size = options.size
+    while (size < options.minSize) {
+      size *= 2
+    }
+    options.size = size
+    return size
+  }
+
+  function wrap(id: string, size: number, content: string) {
+    return `<svg
+        width="${size}"
+        height="${size}"
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+      >
+        <defs>
+          <pattern
+            id="${id}"
+            width="${size}"
+            height="${size}"
+            patternUnits="userSpaceOnUse"
+          >
+            ${content}
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#${id})"/>
+      </svg>`
+  }
+
+  function base64(svg: string) {
+    const img = unescape(encodeURIComponent(svg))
+    return `url(data:image/svg+xml;base64,${window.btoa(img)})`
   }
 }

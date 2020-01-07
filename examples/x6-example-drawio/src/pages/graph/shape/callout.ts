@@ -1,12 +1,13 @@
 import { getFactor } from './util'
 import {
-  util,
   State,
   Shape,
   Perimeter,
   Point,
   Rectangle,
   SvgCanvas2D,
+  ObjectExt,
+  Margin,
 } from '@antv/x6'
 
 export class CalloutShape extends Shape.Actor {
@@ -24,7 +25,7 @@ export class CalloutShape extends Shape.Actor {
       0,
       0,
       0,
-      util.getNumber(this.style, 'factor', this.factor) * this.scale,
+      ObjectExt.getNumber(this.style, 'factor', this.factor) * this.scale,
     )
   }
 
@@ -65,8 +66,15 @@ export function calloutPerimeter(
     CalloutShape.prototype.factor,
     bounds.height,
   )
-  const rect = new Rectangle(0, 0, 0, factor * state.view.scale)
-  const directedBounds = util.getDirectedBounds(bounds, rect, state.style)
+
+  const margin: Margin = {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: factor * state.view.scale,
+  }
+
+  const directedBounds = State.getDirectedBounds(state, bounds, margin)
   return Perimeter.rectangle(directedBounds, state, next, orthogonal)
 }
 

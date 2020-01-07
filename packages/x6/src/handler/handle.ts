@@ -1,9 +1,9 @@
-import * as util from '../util'
+import { Angle, Point, Rectangle } from '../geometry'
 import { State } from '../core/state'
 import { Graph } from '../graph'
-import { MouseEventEx } from '../common'
+import { MouseEventEx } from './mouse-event'
 import { globals } from '../option/global'
-import { Rectangle, Point, Image } from '../struct'
+import { Image } from '../struct'
 import { Shape, ImageShape, EllipseShape } from '../shape'
 
 export class Handle {
@@ -110,15 +110,15 @@ export class Handle {
 
     // Snaps to grid for the rotated position then applies the
     // rotation for the direction after that
-    const alpha1 = -util.toRad(this.getRotation())
-    const alpha2 = -util.toRad(this.getTotalRotation()) - alpha1
+    const rad1 = -Angle.toRad(this.getRotation())
+    const rad2 = -Angle.toRad(this.getTotalRotation()) - rad1
     p = this.flipPoint(
       this.rotatePoint(
         this.snapPoint(
-          this.rotatePoint(p, alpha1),
+          this.rotatePoint(p, rad1),
           this.ignoreGrid || !this.graph.isGridEnabledForEvent(e.getEvent()),
         ),
-        alpha2,
+        rad2,
       ),
     )
 
@@ -169,8 +169,8 @@ export class Handle {
     if (this.shape != null && this.state.shape != null) {
       let p = this.getPosition(this.state.getPaintBounds())
       if (p != null) {
-        const alpha = util.toRad(this.getTotalRotation())
-        p = this.rotatePoint(this.flipPoint(p), alpha)
+        const rad = Angle.toRad(this.getTotalRotation())
+        p = this.rotatePoint(this.flipPoint(p), rad)
 
         const s = this.graph.view.scale
         const t = this.graph.view.translate
@@ -188,7 +188,7 @@ export class Handle {
    * true if the text node is in the graph container.
    */
   protected isHtmlRequired() {
-    return util.hasHtmlLabel(this.state)
+    return State.hasHtmlLabel(this.state)
   }
 
   /**
@@ -197,7 +197,7 @@ export class Handle {
   protected rotatePoint(pt: Point, deg: number) {
     const bounds = this.state.getCellBounds()
     const cx = bounds.getCenter()
-    return util.rotatePoint(pt, deg, cx)
+    return Point.rotate(pt, deg, cx)
   }
 
   /**

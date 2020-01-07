@@ -1,9 +1,9 @@
-import * as util from '../util'
-import { Events } from '../common'
+import { Point } from '../geometry'
+import { Events } from '../entity'
+import { ArrayExt, NumberExt } from '../util'
 import { Cell } from './cell'
 import { Style } from '../types'
 import { Geometry } from './geometry'
-import { Point } from '../struct'
 import {
   IChange,
   RootChange,
@@ -110,7 +110,7 @@ export class Model extends Events<Model.EventArgs> {
     iterator: (layer: Cell, index: number, layers: Cell[]) => void,
     context?: any,
   ) {
-    util.forEach(this.getLayers(), iterator, context)
+    ArrayExt.forEach(this.getLayers(), iterator, context)
   }
 
   // #endregion
@@ -233,7 +233,7 @@ export class Model extends Events<Model.EventArgs> {
     filter: (cell: Cell, index: number, arr: Cell[]) => boolean,
     thisArg?: any,
   ): Cell[] {
-    return util.filter(cells, filter, thisArg)
+    return ArrayExt.filter(cells, filter, thisArg)
   }
 
   getNearestCommonAncestor(cell1: Cell | null, cell2: Cell | null) {
@@ -285,7 +285,7 @@ export class Model extends Events<Model.EventArgs> {
       }
 
       const id = cell.getId()
-      if (id != null && util.isNumeric(id)) {
+      if (id != null && NumberExt.isNumeric(id)) {
         this.nextCellId = Math.max(this.nextCellId, +id)
       }
 

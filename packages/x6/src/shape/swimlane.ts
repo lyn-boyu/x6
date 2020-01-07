@@ -1,8 +1,8 @@
-import * as util from '../util'
+import { Color } from '../util'
+import { Rectangle } from '../geometry'
 import { globals } from '../option'
 import { Shape } from './shape-base'
 import { SvgCanvas2D } from '../canvas'
-import { Rectangle } from '../struct'
 
 export class Swimlane extends Shape {
   image: string | null
@@ -247,7 +247,7 @@ export class Swimlane extends Shape {
     }
 
     if (swimlaneLine) {
-      this.drawDivider(c, x, y, w, h, start, !util.isValidColor(fillColor))
+      this.drawDivider(c, x, y, w, h, start, !Color.isValid(fillColor))
     }
   }
 
@@ -292,7 +292,7 @@ export class Swimlane extends Shape {
     start: number,
     color?: string,
   ) {
-    if (util.isValidColor(color)) {
+    if (Color.isValid(color)) {
       c.setStrokeColor(color)
       c.setDashed(true)
       c.begin()
@@ -324,7 +324,7 @@ export class Swimlane extends Shape {
   }
 
   private scopedDraw(c: SvgCanvas2D, fillColor: string, fn: () => void) {
-    const valid = util.isValidColor(fillColor)
+    const valid = Color.isValid(fillColor)
     if (valid) {
       c.setFillColor(fillColor)
     } else {

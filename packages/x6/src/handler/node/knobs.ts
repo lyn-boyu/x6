@@ -1,9 +1,12 @@
-import * as util from '../../util'
+import { NumberExt } from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Angle, Point, Rectangle } from '../../geometry'
+import { Disposable } from '../../entity'
+import { State } from '../../core'
 import { Shape } from '../../shape'
 import { Handle } from '../handle'
 import { NodeHandler } from './handler'
-import { Rectangle, Point } from '../../struct'
-import { Disposable, DomEvent, MouseEventEx } from '../../common'
+import { MouseEventEx } from '../mouse-event'
 import {
   createLabelHandle,
   getLabelHandleCursor,
@@ -115,7 +118,7 @@ export class Knobs extends Disposable {
       const label = this.graph.getLabel(this.state.cell)
       if (
         label != null &&
-        (util.isHtmlElem(label) || (label as string).length > 0)
+        (DomUtil.isHtmlElement(label) || (label as string).length > 0)
       ) {
         const geo = this.state.cell.getGeometry()
         if (geo && !geo.relative) {
@@ -167,7 +170,7 @@ export class Knobs extends Disposable {
       handle.visible = this.isResizeHandleVisible(index)
     }
 
-    if (handle.isHtmlAllowed() && util.hasHtmlLabel(this.state)) {
+    if (handle.isHtmlAllowed() && State.hasHtmlLabel(this.state)) {
       handle.bounds.width -= 1
       handle.bounds.height -= 1
       handle.dialect = 'html'
@@ -190,7 +193,7 @@ export class Knobs extends Disposable {
     if (handle != null) {
       handle.bounds.x = Math.floor(x - handle.bounds.width / 2)
       handle.bounds.y = Math.floor(y - handle.bounds.height / 2)
-      if (util.isVisible(handle.elem)) {
+      if (DomUtil.isVisible(handle.elem)) {
         handle.redraw()
       }
     }
@@ -233,7 +236,7 @@ export class Knobs extends Disposable {
           (
             hit != null &&
             shape.bounds.isIntersectWith(hit) &&
-            util.isVisible(shape.elem)
+            DomUtil.isVisible(shape.elem)
           )
         )
       )
@@ -324,12 +327,12 @@ export class Knobs extends Disposable {
     if (this.handles != null) {
       const index = this.master.index
       const handle = index != null ? this.handles[index] : null
-      if (handle != null && util.isHiddenElement(handle.elem)) {
-        util.showElement(handle.elem)
+      if (handle != null && DomUtil.isHidden(handle.elem)) {
+        DomUtil.show(handle.elem)
       }
 
       if (this.master.preview.isLivePreview()) {
-        this.handles.forEach(h => h && util.showElement(h.elem))
+        this.handles.forEach(h => h && DomUtil.show(h.elem))
       }
     }
 
@@ -372,24 +375,24 @@ export class Knobs extends Disposable {
           bounds.width < 2 * this.handles[0].bounds.width + 2 * tol ||
           bounds.height < 2 * this.handles[0].bounds.height + 2 * tol
         ) {
-          idxs.forEach(i => util.hideElement(this.handles![i].elem))
+          idxs.forEach(i => DomUtil.hide(this.handles![i].elem))
         } else {
-          idxs.forEach(i => util.showElement(this.handles![i].elem))
+          idxs.forEach(i => DomUtil.show(this.handles![i].elem))
         }
       }
 
       const ct = bounds.getCenter()
       const right = bounds.x + bounds.width
       const bottom = bounds.y + bounds.height
-      const alpha = util.toRad(util.getRotation(this.state))
-      const cos = Math.cos(alpha)
-      const sin = Math.sin(alpha)
+      const rad = Angle.toRad(State.getRotation(this.state))
+      const cos = Math.cos(rad)
+      const sin = Math.sin(rad)
       let pt = new Point()
 
       const draw = (index: number, handle?: Shape) => {
         const cursor = this.getCurosr(index)
         const shape = handle || this.handles![index]
-        pt = util.rotatePointEx(pt, cos, sin, ct)
+        pt = Point.rotateEx(pt, cos, sin, ct)
         this.moveHandleTo(shape, pt.x, pt.y)
         if (this.graph.isEnabled()) {
           shape.setCursor(cursor)
@@ -458,7 +461,7 @@ export class Knobs extends Disposable {
     if (this.rotationShape != null) {
       const rot = this.master.preview.getRotationForRedraw()
       const ct = this.state.bounds.getCenter()
-      const pt = util.rotatePoint(this.getRotationHandlePosition(), rot, ct)
+      const pt = Point.rotate(this.getRotationHandlePosition(), rot, ct)
       const elem = this.rotationShape.elem
       if (elem != null) {
         this.moveHandleTo(this.rotationShape, pt.x, pt.y)
@@ -502,9 +505,9 @@ export class Knobs extends Disposable {
       7: 4,
     }
 
-    const alpha = util.toRad(util.getRotation(this.state))
-    const da = Math.round((alpha * 4) / Math.PI)
-    return cursors[util.mod(indexMap[index] + da, cursors.length)]
+    const rad = Angle.toRad(State.getRotation(this.state))
+    const da = Math.round((rad * 4) / Math.PI)
+    return cursors[NumberExt.mod(indexMap[index] + da, cursors.length)]
   }
 
   protected getHandlePadding() {
@@ -543,7 +546,7 @@ export class Knobs extends Disposable {
   protected setHandlesVisible(visible: boolean) {
     this.handles &&
       this.handles.forEach(handle =>
-        visible ? util.showElement(handle.elem) : util.hideElement(handle.elem),
+        visible ? DomUtil.show(handle.elem) : DomUtil.hide(handle.elem),
       )
 
     this.customHandles &&
@@ -554,17 +557,17 @@ export class Knobs extends Disposable {
     this.setHandlesVisible(false)
 
     if (Handle.isRotationHandle(index) && this.rotationShape != null) {
-      util.showElement(this.rotationShape.elem)
+      DomUtil.show(this.rotationShape.elem)
     } else if (Handle.isLabelHandle(index) && this.labelShape != null) {
-      util.showElement(this.labelShape.elem)
+      DomUtil.show(this.labelShape.elem)
     } else if (this.handles != null && this.handles[index] != null) {
-      util.showElement(this.handles[index].elem)
+      DomUtil.show(this.handles[index].elem)
     } else if (Handle.isCustomHandle(index) && this.customHandles != null) {
       this.customHandles[Handle.getCustomHandle(index)].setVisible(true)
     }
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     if (this.handles != null) {
       this.handles.forEach(h => h.dispose())

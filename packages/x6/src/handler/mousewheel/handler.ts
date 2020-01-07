@@ -1,8 +1,7 @@
-import * as util from '../../util'
+import { Point } from '../../geometry'
+import { DomUtil, DomEvent } from '../../dom'
 import { Graph } from '../../graph'
-import { Point } from '../../struct'
-import { DomEvent, Disposable } from '../../common'
-import { BaseHandler } from '../handler-base'
+import { BaseHandler } from '../base-handler'
 
 export class MouseWheelHandler extends BaseHandler {
   private cursorPosition: Point
@@ -98,7 +97,7 @@ export class MouseWheelHandler extends BaseHandler {
     )
 
     this.wheelZoomTimer = window.setTimeout(() => {
-      const offset = util.getOffset(container)
+      const offset = DomUtil.getOffset(container)
       let dx = 0
       let dy = 0
 
@@ -117,7 +116,7 @@ export class MouseWheelHandler extends BaseHandler {
         //     dy * (this.cumulativeZoomFactor - 1))
         // }
 
-        if (util.hasScrollbars(container) && (dx !== 0 || dy !== 0)) {
+        if (DomUtil.hasScrollbars(container) && (dx !== 0 || dy !== 0)) {
           container.scrollLeft -= dx * (this.cumulativeZoomFactor - 1)
           container.scrollTop -= dy * (this.cumulativeZoomFactor - 1)
         }
@@ -128,7 +127,7 @@ export class MouseWheelHandler extends BaseHandler {
     }, this.wheelZoomDelay)
   }
 
-  @Disposable.aop()
+  @BaseHandler.dispose()
   dispose() {
     this.disable()
   }

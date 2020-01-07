@@ -1,6 +1,6 @@
 import { Route } from '../../route'
-import { DomEvent } from '../../common'
-import { Rectangle, Point } from '../../struct'
+import { DomEvent } from '../../dom'
+import { Point, Rectangle } from '../../geometry'
 import { EdgeHandler } from './handler'
 
 export class EdgeElbowHandler extends EdgeHandler {

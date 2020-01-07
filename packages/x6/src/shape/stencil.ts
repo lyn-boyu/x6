@@ -1,7 +1,10 @@
-import * as util from '../util'
+import { Point } from '../geometry'
+import { StringExt } from '../util'
+import { DomUtil } from '../dom'
 import { Shape } from './shape-base'
 import { SvgCanvas2D } from '../canvas'
-import { Point, Anchor, NodeType } from '../struct'
+import { NodeType } from '../enum'
+import { Anchor } from '../struct'
 import { Direction, Align, VAlign, LineCap, LineJoin } from '../types'
 import { globals } from '../option'
 
@@ -66,9 +69,9 @@ export class Stencil extends Shape {
   evaluateAttribute(node: Element, name: string, shape: Shape) {
     let result = node.getAttribute(name)
     if (result == null) {
-      const text = util.getTextContent(node as HTMLElement)
+      const text = DomUtil.getTextContent(node as HTMLElement)
       if (text != null && Stencil.allowEval) {
-        const func = util.exec(text)
+        const func = StringExt.eval(text)
         if (typeof func === 'function') {
           result = func(shape)
         }
@@ -170,7 +173,7 @@ export class Stencil extends Shape {
     const sx = aspect.sx
     const sy = aspect.sy
     const minScale = Math.min(sx, sy)
-    const name = util.getNodeName(node)
+    const name = DomUtil.getNodeName(node)
 
     if (name === 'save') {
       canvas.save()
@@ -191,7 +194,7 @@ export class Stencil extends Shape {
           let childNode = node.firstChild as Element
           while (childNode != null) {
             if (childNode.nodeType === NodeType.element) {
-              const childName = util.getNodeName(childNode)
+              const childName = DomUtil.getNodeName(childNode)
               if (childName === 'move' || childName === 'line') {
                 if (childName === 'move' || segs.length === 0) {
                   segs.push([])

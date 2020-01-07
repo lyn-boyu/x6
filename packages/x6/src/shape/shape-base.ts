@@ -1,13 +1,14 @@
-import * as util from '../util'
+import { NumberExt, Color } from '../util'
+import { DomUtil, DomEvent } from '../dom'
+import { Point, Rectangle } from '../geometry'
+import { Disposable } from '../entity'
 import * as images from '../assets/images'
 import { globals } from '../option'
 import { State } from '../core/state'
 import { Stencil } from './stencil'
 import { SvgCanvas2D } from '../canvas'
-import { DomEvent, Disposable } from '../common'
-import { Rectangle, Point } from '../struct'
-import { Style, Direction, Dialect } from '../types'
-import { registerEntity } from '../util/biz/registry'
+import { Style, Direction, Dialect, Margin } from '../types'
+import { registerEntity } from '../registry/util'
 
 export class Shape extends Disposable {
   state: State
@@ -213,7 +214,7 @@ export class Shape extends Disposable {
       if (this.visible && this.isValidBounds()) {
         elem.style.visibility = ''
         this.clean()
-        if (util.isSvgElem(elem)) {
+        if (DomUtil.isSvgElement(elem)) {
           this.redrawSvgShape()
         } else {
           this.redrawHtmlShape()
@@ -231,25 +232,25 @@ export class Shape extends Disposable {
   }
 
   protected create(container: HTMLElement | SVGElement) {
-    return util.isSvgElem(container)
+    return DomUtil.isSvgElement(container)
       ? this.createSvgGroup() // g
       : this.createHtmlDiv() // div
   }
 
   protected createSvgGroup(): SVGGElement {
-    return util.createSvgElement('g') as SVGGElement
+    return DomUtil.createSvgElement('g') as SVGGElement
   }
 
   protected createHtmlDiv(): HTMLDivElement {
-    const elem = util.createElement('div') as HTMLDivElement
+    const elem = DomUtil.createElement('div') as HTMLDivElement
     elem.style.position = 'absolute'
     return elem
   }
 
   protected clean() {
     if (this.elem != null) {
-      if (util.isSvgElem(this.elem)) {
-        util.emptyElement(this.elem)
+      if (DomUtil.isSvgElement(this.elem)) {
+        DomUtil.empty(this.elem)
       } else {
         this.elem.style.cssText = 'position: absolute;'
         this.elem.innerHTML = ''
@@ -268,7 +269,7 @@ export class Shape extends Disposable {
 
   protected updateHtmlBounds(elem: HTMLElement) {
     let sw = 0
-    if (util.isValidColor(this.strokeColor) && this.strokeWidth > 0) {
+    if (Color.isValid(this.strokeColor) && this.strokeWidth > 0) {
       sw = Math.ceil(this.strokeWidth * this.scale)
     }
 
@@ -304,10 +305,7 @@ export class Shape extends Disposable {
         `Color='${this.shadowColor}')`
     }
 
-    if (
-      util.isValidColor(this.fillColor) &&
-      util.isValidColor(this.gradientColor)
-    ) {
+    if (Color.isValid(this.fillColor) && Color.isValid(this.gradientColor)) {
       let start = this.fillColor
       let end = this.gradientColor
       let type = '0'
@@ -315,7 +313,7 @@ export class Shape extends Disposable {
       const lookup = { east: 0, south: 1, west: 2, north: 3 }
       let dir = this.direction != null ? lookup[this.direction] : 0
       if (this.gradientDirection != null) {
-        dir = util.mod(dir + lookup[this.gradientDirection] - 1, 4)
+        dir = NumberExt.mod(dir + lookup[this.gradientDirection] - 1, 4)
       }
 
       if (dir === 1) {
@@ -344,7 +342,7 @@ export class Shape extends Disposable {
   protected updateHtmlColors(node: HTMLElement) {
     let color = this.strokeColor
 
-    if (util.isValidColor(color)) {
+    if (Color.isValid(color)) {
       node.style.borderColor = color!
 
       if (this.dashed) {
@@ -360,7 +358,7 @@ export class Shape extends Disposable {
     }
 
     color = this.outline ? null : this.fillColor
-    if (util.isValidColor(color)) {
+    if (Color.isValid(color)) {
       node.style.backgroundColor = color!
       node.style.backgroundImage = 'none'
     } else if (this.pointerEvents) {
@@ -388,7 +386,7 @@ export class Shape extends Disposable {
   protected createCanvas() {
     let canvas: SvgCanvas2D | null = null
 
-    if (util.isSvgElem(this.elem)) {
+    if (DomUtil.isSvgElement(this.elem)) {
       canvas = this.createSvgCanvas()
     }
 
@@ -467,7 +465,7 @@ export class Shape extends Disposable {
           refCount = refCount > 0 ? refCount - 1 : 0
           this.setGradientRefConut(gradient, refCount)
           if (refCount === 0) {
-            util.removeElement(gradient)
+            DomUtil.remove(gradient)
           }
         }
       })
@@ -603,10 +601,7 @@ export class Shape extends Disposable {
       c.setDashPattern(dash)
     }
 
-    if (
-      util.isValidColor(this.fillColor) &&
-      util.isValidColor(this.gradientColor)
-    ) {
+    if (Color.isValid(this.fillColor) && Color.isValid(this.gradientColor)) {
       const b = this.getGradientBounds(c, x, y, w, h)
       c.setGradient(
         this.fillColor!,
@@ -638,8 +633,8 @@ export class Shape extends Disposable {
     ) {
       if (this.dialect === 'svg') {
         const bbox = this.createBoundingBox()
-        rect = util.createSvgElement('rect')
-        util.setAttributes(rect, {
+        rect = DomUtil.createSvgElement('rect')
+        DomUtil.setAttributes(rect, {
           x: bbox.x,
           y: bbox.y,
           width: bbox.width,
@@ -741,14 +736,14 @@ export class Shape extends Disposable {
       }
 
       while (i < (close ? points.length : points.length - 1)) {
-        let tmp = points[util.mod(i, points.length)]
+        let tmp = points[NumberExt.mod(i, points.length)]
         let dx = pt.x - tmp.x
         let dy = pt.y - tmp.y
 
         if (
           rounded &&
           (dx !== 0 || dy !== 0) &&
-          (exclude == null || util.indexOf(exclude, i - 1) < 0)
+          (exclude == null || exclude.indexOf(i - 1) < 0)
         ) {
           // Draws a line from the last point to the current
           // point with a spacing of size off the current point
@@ -764,7 +759,7 @@ export class Shape extends Disposable {
           // Draws a curve from the last point to the current
           // point with a spacing of size off the current point
           // into direction of the next point
-          let next = points[util.mod(i + 1, points.length)]
+          let next = points[NumberExt.mod(i + 1, points.length)]
 
           // Uses next non-overlapping point
           while (
@@ -772,7 +767,7 @@ export class Shape extends Disposable {
             Math.round(next.x - tmp.x) === 0 &&
             Math.round(next.y - tmp.y) === 0
           ) {
-            next = points[util.mod(i + 2, points.length)]
+            next = points[NumberExt.mod(i + 2, points.length)]
             i += 1
           }
 
@@ -829,8 +824,8 @@ export class Shape extends Disposable {
     // Normalizes argument for getLabelMargins hook
     const margin = this.getLabelMargins(bounds)
     if (margin != null) {
-      let flipH = !!this.style.flipH
-      let flipV = !!this.style.flipV
+      let flipH = State.isFlipH(this.style)
+      let flipV = State.isFlipV(this.style)
 
       // Handles special case for vertical labels
       if (
@@ -838,18 +833,18 @@ export class Shape extends Disposable {
         this.state.text != null &&
         this.state.text.drawBoundsInverted()
       ) {
-        const tmp1 = margin.x
-        margin.x = margin.height
-        margin.height = margin.width
-        margin.width = margin.y
-        margin.y = tmp1
+        const m = margin.left
+        margin.left = margin.bottom
+        margin.bottom = margin.right
+        margin.right = margin.top
+        margin.top = m
 
-        const tmp2 = flipH
+        const f = flipH
         flipH = flipV
-        flipV = tmp2
+        flipV = f
       }
 
-      return util.getDirectedBounds(rect, margin, this.style, flipH, flipV)
+      return State.getDirectedBounds(this.state, rect, margin, flipH, flipV)
     }
 
     return rect
@@ -859,7 +854,7 @@ export class Shape extends Disposable {
    * Returns the scaled top, left, bottom and right margin
    * to be used for computing the label bounds.
    */
-  getLabelMargins(rect: Rectangle): Rectangle | null {
+  getLabelMargins(rect: Rectangle): Margin | null {
     return null
   }
 
@@ -868,12 +863,12 @@ export class Shape extends Disposable {
   // #region boundingBox
 
   updateBoundingBox() {
-    if (this.useSvgBoundingBox && util.isSvgElem(this.elem)) {
+    if (this.useSvgBoundingBox && DomUtil.isSvgElement(this.elem)) {
       try {
         const b = (this.elem as SVGGraphicsElement).getBBox()
         if (b.width > 0 && b.height > 0) {
           this.boundingBox = new Rectangle(b.x, b.y, b.width, b.height)
-          this.boundingBox.grow((this.strokeWidth * this.scale) / 2)
+          this.boundingBox.inflate((this.strokeWidth * this.scale) / 2)
           return
         }
       } catch (e) {}
@@ -885,7 +880,7 @@ export class Shape extends Disposable {
         this.augmentBoundingBox(bbox)
         const rot = this.getShapeRotation()
         if (rot !== 0) {
-          bbox = util.rotateRectangle(bbox, rot)
+          bbox = bbox.rotate(rot)
         }
       }
 
@@ -946,7 +941,7 @@ export class Shape extends Disposable {
       bbox.height += Math.ceil(this.shadowOffsetY * this.scale)
     }
 
-    bbox.grow((this.strokeWidth * this.scale) / 2)
+    bbox.inflate((this.strokeWidth * this.scale) / 2)
   }
 
   protected getGradientBounds(
@@ -1034,19 +1029,19 @@ export class Shape extends Disposable {
   }
 
   hasClass(selector: string | null) {
-    return util.hasClass(this.elem, selector)
+    return DomUtil.hasClass(this.elem, selector)
   }
 
   addClass(selector: string | null) {
-    return util.addClass(this.elem, selector)
+    return DomUtil.addClass(this.elem, selector)
   }
 
   removeClass(selector: string | null) {
-    return util.removeClass(this.elem, selector)
+    return DomUtil.removeClass(this.elem, selector)
   }
 
   toggleClass(selector: string | null) {
-    return util.toggleClass(this.elem, selector)
+    return DomUtil.toggleClass(this.elem, selector)
   }
 
   updateClassName() {
@@ -1119,11 +1114,11 @@ export class Shape extends Disposable {
     return (this.style.arcSize || globals.defaultLineArcSize) / 2
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     if (this.elem != null) {
       DomEvent.release(this.elem as HTMLElement)
-      util.removeElement(this.elem)
+      DomUtil.remove(this.elem)
       this.elem = null
     }
 
@@ -1154,5 +1149,29 @@ export namespace Shape {
 
   export function getShapeNames() {
     return Object.keys(shapes)
+  }
+}
+
+export namespace Shape {
+  export function applyClassName(
+    shape: Shape | HTMLElement,
+    prefix: string,
+    native?: string,
+    manual?: string,
+  ) {
+    let className = ''
+    if (native) {
+      className += `${prefix}-${native}`
+    }
+    if (manual) {
+      className += ` ${manual}`
+    }
+
+    if (className.length > 0) {
+      shape.className = className
+      if (shape instanceof Shape && shape.elem) {
+        shape.elem.setAttribute('class', className)
+      }
+    }
   }
 }

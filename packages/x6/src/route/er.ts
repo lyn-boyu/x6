@@ -1,8 +1,8 @@
-import * as util from '../util'
+import { Point } from '../geometry'
 import { Cell } from '../core/cell'
 import { State } from '../core/state'
 import { globals } from '../option'
-import { Point, DirectionMask } from '../struct'
+import { DirectionMask } from '../enum'
 
 /**
  * Implements an entity relation style for edges (as used in database
@@ -47,7 +47,7 @@ export function er(
     sourceState.bounds.x = p0.x
     sourceState.bounds.y = p0.y
   } else if (sourceState != null) {
-    const dir = util.getPortConstraints(
+    const dir = State.getPortConstraints(
       sourceState,
       edgeState,
       true,
@@ -79,7 +79,7 @@ export function er(
     targetState.bounds.x = pe.x
     targetState.bounds.y = pe.y
   } else if (targetState != null) {
-    const dir = util.getPortConstraints(
+    const dir = State.getPortConstraints(
       targetState,
       edgeState,
       false,

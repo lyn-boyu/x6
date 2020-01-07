@@ -1,23 +1,20 @@
-import * as util from '../../util'
+import { Platform } from '../../util'
+import { Point, Rectangle, Line } from '../../geometry'
+import { DomEvent, DomUtil } from '../../dom'
+import { IDisposable } from '../../entity'
 import { Route } from '../../route'
 import { Graph } from '../../graph'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
-import { Rectangle, Point, Anchor } from '../../struct'
+import { Anchor } from '../../struct'
 import { Shape, RectangleShape } from '../../shape'
-import { MouseHandler } from '../handler-mouse'
+import { MouseHandler } from '../mouse-handler'
 import { CellMarker } from '../cell-marker'
 import { AnchorHandler } from '../anchor/handler'
 import { Handle } from '../handle'
 import { EdgeMarker } from './marker'
 import { transparentMarker } from '../connection/util'
-import {
-  detector,
-  DomEvent,
-  MouseEventEx,
-  IDisposable,
-  Disposable,
-} from '../../common'
+import { MouseEventEx } from '../mouse-event'
 import {
   createEdgeHandle,
   getEdgeHandleCursor,
@@ -254,13 +251,13 @@ export class EdgeHandler extends MouseHandler {
   }
 
   protected isPreferHtml() {
-    let preferHtml = util.hasHtmlLabel(this.state)
+    let preferHtml = State.hasHtmlLabel(this.state)
     if (!preferHtml) {
-      preferHtml = util.hasHtmlLabel(this.state.getVisibleTerminalState(true))
+      preferHtml = State.hasHtmlLabel(this.state.getVisibleTerminalState(true))
     }
 
     if (!preferHtml) {
-      preferHtml = util.hasHtmlLabel(this.state.getVisibleTerminalState(false))
+      preferHtml = State.hasHtmlLabel(this.state.getVisibleTerminalState(false))
     }
 
     return preferHtml
@@ -274,7 +271,7 @@ export class EdgeHandler extends MouseHandler {
         if (pstate != null) {
           this.parentHighlight = this.createParentHighlightShape(pstate.bounds)
           this.parentHighlight.pointerEvents = false
-          this.parentHighlight.rotation = util.getRotation(pstate)
+          this.parentHighlight.rotation = State.getRotation(pstate)
           this.parentHighlight.init(this.graph.view.getOverlayPane())
         }
       }
@@ -482,7 +479,7 @@ export class EdgeHandler extends MouseHandler {
   protected getHandleForEvent(e: MouseEventEx) {
     const tol = DomEvent.isMouseEvent(e.getEvent()) ? 1 : this.tolerance
     const hit =
-      this.checkHandleBounds && (detector.IS_IE || tol > 0)
+      this.checkHandleBounds && (Platform.IS_IE || tol > 0)
         ? new Rectangle(
             e.getGraphX() - tol,
             e.getGraphY() - tol,
@@ -497,7 +494,7 @@ export class EdgeHandler extends MouseHandler {
     function checkShape(shape: Shape | null) {
       if (
         shape &&
-        util.isVisible(shape.elem) &&
+        DomUtil.isVisible(shape.elem) &&
         (e.isSource(shape) || (hit && shape.bounds.isIntersectWith(hit)))
       ) {
         const dx = e.getGraphX() - shape.bounds.getCenterX()
@@ -580,12 +577,12 @@ export class EdgeHandler extends MouseHandler {
   /**
    * Adds a control point for the given state and event.
    */
-  protected addPoint(state: State, evt: MouseEvent) {
-    const p = util.clientToGraph(this.graph.container, evt)
-    const gridEnabled = this.graph.isGridEnabledForEvent(evt)
+  protected addPoint(state: State, e: MouseEvent) {
+    const p = this.graph.clientToGraph(e)
+    const gridEnabled = this.graph.isGridEnabledForEvent(e)
     this.normalizePoint(p, gridEnabled)
     this.addPointAt(state, p.x, p.y)
-    DomEvent.consume(evt)
+    DomEvent.consume(e)
   }
 
   protected addPointAt(state: State, x: number, y: number) {
@@ -608,7 +605,7 @@ export class EdgeHandler extends MouseHandler {
       if (geo.points == null) {
         geo.points = [p]
       } else {
-        const index = util.findNearestSegment(
+        const index = State.getNearestSegment(
           state,
           p.x * s + offset.x,
           p.y * s + offset.y,
@@ -908,20 +905,12 @@ export class EdgeHandler extends MouseHandler {
           }
 
           const checkRemove = (idx: number, p: Point) => {
-            if (
-              idx > 0 &&
-              idx < abs.length - 1 &&
-              util.ptSegmentDist(
-                abs[idx - 1].x,
-                abs[idx - 1].y,
-                abs[idx + 1].x,
-                abs[idx + 1].y,
-                p.x,
-                p.y,
-              ) < tol
-            ) {
-              points!.splice(idx - 1, 1)
-              result = points
+            if (idx > 0 && idx < abs.length - 1) {
+              const line = new Line(abs[idx - 1], abs[idx + 1])
+              if (line.pointSquaredDistance(p) < tol) {
+                points!.splice(idx - 1, 1)
+                result = points
+              }
             }
           }
 
@@ -1439,7 +1428,7 @@ export class EdgeHandler extends MouseHandler {
     }
 
     if (this.labelHandleShape) {
-      util.toFront(this.labelHandleShape.elem)
+      DomUtil.toFront(this.labelHandleShape.elem)
     }
   }
 
@@ -1487,7 +1476,7 @@ export class EdgeHandler extends MouseHandler {
 
       // Shows or hides the label handle depending on the label
       this.labelHandleShape.visible =
-        util.isValidLabel(this.graph.getLabel(cell)) &&
+        this.isValidLabel(this.graph.getLabel(cell)) &&
         this.graph.isLabelMovable(cell)
     }
 
@@ -1629,6 +1618,17 @@ export class EdgeHandler extends MouseHandler {
     }
   }
 
+  protected isValidLabel(label: string | HTMLElement | null) {
+    if (label != null) {
+      if (typeof label === 'string') {
+        return label.length > 0
+      }
+      return true
+    }
+
+    return false
+  }
+
   /**
    * Checks if the label handle intersects the given bounds and
    * moves it if it intersects.
@@ -1674,7 +1674,7 @@ export class EdgeHandler extends MouseHandler {
     handles && handles.forEach(h => h && h.dispose())
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.state.view.graph.off('escape', this.escapeHandler)
     this.escapeHandler = null

@@ -1,10 +1,9 @@
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
 import * as movment from '../moving/util'
 import { Cell } from '../../core/cell'
 import { Guide } from './guide'
-import { Rectangle, Point } from '../../struct'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 import { createGuide, isGuideEnabled } from './option'
 
 export class GuideHandler extends MouseHandler {
@@ -29,7 +28,7 @@ export class GuideHandler extends MouseHandler {
   mouseDown(e: MouseEventEx) {
     if (movment.isValid(this, e) && movment.canMove(this, e)) {
       this.cell = this.getCell(e)!
-      this.origin = util.clientToGraph(this.graph.container, e)
+      this.origin = this.graph.clientToGraph(e)
       this.bounds = this.graph.view.getBounds(
         movment.getCells(this, this.cell, e),
       )
@@ -129,7 +128,7 @@ export class GuideHandler extends MouseHandler {
     return this.graph.view.getCellStates(cells)
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
     this.reset()

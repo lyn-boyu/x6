@@ -1,12 +1,13 @@
+import { Point } from '../../geometry'
+import { DomEvent } from '../../dom'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Graph } from '../../graph'
-import { Point } from '../../struct'
 import { Handle } from '../handle'
 import { Knobs } from './knobs'
 import { Preview } from './preview'
-import { MouseHandler } from '../handler-mouse'
-import { DomEvent, MouseEventEx, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 
 export class NodeHandler extends MouseHandler {
   state: State
@@ -235,7 +236,7 @@ export class NodeHandler extends MouseHandler {
     this.preview.refresh()
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     if (this.escapeHandler != null) {
       this.state.view.graph.off('escape', this.escapeHandler)

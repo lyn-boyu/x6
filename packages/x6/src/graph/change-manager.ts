@@ -1,6 +1,5 @@
 import { Cell } from '../core/cell'
 import { Graph } from '../graph'
-import { Disposable } from '../common'
 import { BaseManager } from './base-manager'
 import {
   IChange,
@@ -156,7 +155,7 @@ export class ChangeManager extends BaseManager {
     return cells
   }
 
-  @Disposable.aop()
+  @BaseManager.dispose()
   dispose() {
     this.model.off('change', this.onModelChanged)
   }

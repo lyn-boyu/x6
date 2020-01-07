@@ -1,8 +1,9 @@
-import * as util from '../../util'
+import { NumberExt } from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Point, Rectangle } from '../../geometry'
+import { Disablable } from '../../entity'
 import { Graph } from '../../graph'
-import { IMouseHandler } from '../../handler'
-import { Rectangle, Point } from '../../struct'
-import { Disablable, DomEvent, Disposable, MouseEventEx } from '../../common'
+import { IMouseHandler, MouseEventEx } from '../../handler'
 import { Shape, EllipseShape, RectangleShape, ImageShape } from '../../shape'
 import { PartialOptions, FullOptions, getOptions } from './option'
 import { MiniMapRenderder } from './renderer'
@@ -57,6 +58,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
     const showEdge = this.options.showEdge
     const nodeStyle = this.options.nodeStyle
     const edgeStyle = this.options.edgeStyle
+    const getCellStyle = this.options.getCellStyle
 
     this.outline = new Graph(container, {
       model: this.source.getModel(),
@@ -74,11 +76,13 @@ export class MiniMap extends Disablable implements IMouseHandler {
 
       getCellStyle(cell) {
         if (cell != null) {
+          const raw = this.model.getStyle(cell)
           const preset = this.model.isEdge(cell) ? edgeStyle : nodeStyle
-          const style = this.model.getStyle(cell) || {}
+          const fix = getCellStyle ? getCellStyle.call(this, cell) : null
           return {
-            ...style,
+            ...raw,
             ...preset,
+            ...fix,
           }
         }
 
@@ -93,7 +97,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
     })
 
     container.style.overflow = 'hidden'
-    container.style.backgroundColor = util.getComputedStyle(
+    container.style.backgroundColor = DomUtil.getComputedStyle(
       this.source.container,
       'backgroundColor',
     )
@@ -142,7 +146,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
     const viewport = new RectangleShape(this.bounds)
     viewport.dialect = this.outline.dialect
     viewport.init(this.outline.view.getOverlayPane())
-    util.applyClassName(
+    Shape.applyClassName(
       viewport,
       this.source.prefixCls,
       'minimap-viewport',
@@ -192,7 +196,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
 
     sizer.dialect = this.outline.dialect
     sizer.init(this.outline.view.getOverlayPane())
-    util.applyClassName(
+    Shape.applyClassName(
       sizer,
       this.source.prefixCls,
       'minimap-sizer',
@@ -278,8 +282,8 @@ export class MiniMap extends Disablable implements IMouseHandler {
     let x = this.bounds.x + dx
     let y = this.bounds.y + dy
     if (this.options.constrained) {
-      x = util.clamp(x, this.minX, this.maxX)
-      y = util.clamp(y, this.minY, this.maxY)
+      x = NumberExt.clamp(x, this.minX, this.maxX)
+      y = NumberExt.clamp(y, this.minY, this.maxY)
     }
 
     return { x, y }
@@ -444,7 +448,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
 
       if (
         this.source.useScrollbarsForPanning &&
-        util.hasScrollbars(this.source.container)
+        DomUtil.hasScrollbars(this.source.container)
       ) {
         this.scrollLeft = this.source.container.scrollLeft
         this.scrollTop = this.source.container.scrollTop
@@ -525,7 +529,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
       } else {
         if (
           !this.source.useScrollbarsForPanning ||
-          !util.hasScrollbars(this.source.container)
+          !DomUtil.hasScrollbars(this.source.container)
         ) {
           this.source.pan(0, 0)
           dx /= this.outline.view.scale
@@ -542,7 +546,7 @@ export class MiniMap extends Disablable implements IMouseHandler {
     this.active = false
   }
 
-  @Disposable.aop()
+  @Disablable.dispose()
   dispose() {
     if (this.source != null) {
       this.source.off(null, this.panHandler)

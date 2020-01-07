@@ -1,10 +1,11 @@
-import * as util from '../../util'
+import { DomEvent } from '../../dom'
 import * as movment from './util'
 import { Cell } from '../../core/cell'
+import { State } from '../../core/state'
 import { Graph } from '../../graph'
 import { Preview } from './preview'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, DomEvent, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 
 export class MovingHandler extends MouseHandler {
   protected onPan: (() => void) | null
@@ -36,7 +37,7 @@ export class MovingHandler extends MouseHandler {
       const cell = this.getCell(e)
       if (cell && this.graph.isCellsMovable()) {
         this.shouldConsumeMouseUp = true
-        this.consume(e, DomEvent.MOUSE_DOWN)
+        this.consume(e, 'mouseDown')
       }
     }
   }
@@ -50,7 +51,7 @@ export class MovingHandler extends MouseHandler {
       }
 
       this.preview.process(e)
-      this.consume(e, DomEvent.MOUSE_MOVE)
+      this.consume(e, 'mouseMove')
 
       // Cancel the bubbling of event to the container so
       // that the droptarget is not reset due to an mouseMove
@@ -98,7 +99,7 @@ export class MovingHandler extends MouseHandler {
     }
 
     if (this.shouldConsumeMouseUp) {
-      this.consume(e, DomEvent.MOUSE_UP)
+      this.consume(e, 'mouseUp')
     }
 
     this.reset()
@@ -192,11 +193,11 @@ export class MovingHandler extends MouseHandler {
     if (this.graph.model.isNode(parent)) {
       const pState = this.graph.view.getState(parent)
       if (pState != null) {
-        let pos = util.clientToGraph(this.graph.container, e)
-        const rot = util.getRotation(pState)
+        const pos = this.graph.clientToGraph(e)
+        const rot = State.getRotation(pState)
         if (rot !== 0) {
           const cx = pState.bounds.getCenter()
-          pos = util.rotatePoint(pos, -rot, cx)
+          pos.rotate(-rot, cx)
         }
 
         return !pState.bounds.containsPoint(pos)
@@ -229,7 +230,7 @@ export class MovingHandler extends MouseHandler {
     this.shouldConsumeMouseUp = false
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
 

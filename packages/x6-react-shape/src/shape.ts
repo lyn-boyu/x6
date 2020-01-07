@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom'
-import { util, Shape, Rectangle, SvgCanvas2D } from '@antv/x6'
+import { DomUtil, Shape, Rectangle, SvgCanvas2D } from '@antv/x6'
 import { Component } from './extend'
 
 export class ReactShape extends Shape.Rectangle {
@@ -24,22 +24,22 @@ export class ReactShape extends Shape.Rectangle {
       transform += ` rotate(${deg},${bounds.width / 2},${bounds.height / 2})`
     }
 
-    const g = util.createSvgElement('g')
+    const g = DomUtil.createSvgElement('g')
     g.setAttribute('transform', transform)
 
-    const fo = util.createSvgElement('foreignObject')
-    util.setAttributes(fo, { width: bounds.width, height: bounds.height })
+    const fo = DomUtil.createSvgElement('foreignObject')
+    DomUtil.setAttributes(fo, { width: bounds.width, height: bounds.height })
 
-    const div = util.createElement('div')
-    div.style.width = util.toPx(bounds.width)
-    div.style.height = util.toPx(bounds.height)
+    const div = DomUtil.createElement('div')
+    div.style.width = DomUtil.toPx(bounds.width)
+    div.style.height = DomUtil.toPx(bounds.height)
     div.style.overflow = 'hidden'
 
     g.appendChild(fo)
     fo.appendChild(div)
 
     if (this.container == null) {
-      this.container = util.createElement('div')
+      this.container = DomUtil.createElement('div')
       if (this.component != null) {
         ReactDOM.render(this.component, this.container)
       }
@@ -47,8 +47,10 @@ export class ReactShape extends Shape.Rectangle {
 
     const container = this.container
     container.style.overflow = 'hidden'
-    container.style.width = util.toPx(Math.round(bounds.width / this.scale))
-    container.style.height = util.toPx(Math.round(bounds.height / this.scale))
+    container.style.width = DomUtil.toPx(Math.round(bounds.width / this.scale))
+    container.style.height = DomUtil.toPx(
+      Math.round(bounds.height / this.scale),
+    )
     container.style.transform = `scale(${this.scale})`
     container.style.transformOrigin = '0 0'
 
@@ -59,16 +61,11 @@ export class ReactShape extends Shape.Rectangle {
     }
   }
 
+  @Shape.Rectangle.dispose()
   dispose() {
-    if (this.disposed) {
-      return
-    }
-
     if (this.container) {
       ReactDOM.unmountComponentAtNode(this.container)
       this.container = null
     }
-
-    super.dispose()
   }
 }

@@ -1,4 +1,4 @@
-import { Disposable, Events } from '../common'
+import { Events, Disposable } from '../entity'
 import { IChange } from './change'
 
 export class UndoableEdit extends Disposable {
@@ -97,7 +97,7 @@ export class UndoableEdit extends Disposable {
     }
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose(): void {
     if (this.onDispose) {
       this.onDispose(this)

@@ -1,18 +1,13 @@
 import { Assign } from 'utility-types'
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
+import { Platform, ObjectExt } from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Disablable } from '../../entity'
 import { Cell } from '../../core/cell'
 import { Graph } from '../../graph'
 import { Guide } from '../../handler/guide/guide'
 import { createGuide } from '../../handler/guide/option'
-import { CellHighlight } from '../../handler'
-import { Point, Rectangle } from '../../struct'
-import {
-  detector,
-  DomEvent,
-  Disablable,
-  Disposable,
-  MouseEventEx,
-} from '../../common'
+import { CellHighlight, MouseEventEx } from '../../handler'
 
 export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
   currentGraph: Graph | null = null
@@ -33,7 +28,7 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
 
   private eventConsumer = (args: any) => {
     const eventName = args.eventName as string
-    if (eventName !== DomEvent.MOUSE_DOWN) {
+    if (eventName !== 'mouseDown') {
       const e = args.e as MouseEventEx
       e.consume()
     }
@@ -66,7 +61,7 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
     this.stopDrag(null)
   }
 
-  @Disposable.aop()
+  @Disablable.dispose()
   dispose() {
     this.reset()
   }
@@ -115,12 +110,12 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
   }
 
   protected removeDragElement() {
-    util.removeElement(this.dragElement)
+    DomUtil.remove(this.dragElement)
     this.dragElement = null
   }
 
   protected removePreviewElement() {
-    util.removeElement(this.previewElement)
+    DomUtil.remove(this.previewElement)
     this.previewElement = null
   }
 
@@ -137,8 +132,8 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
   protected isEventInGraph(graph: Graph, e: MouseEvent) {
     const x = DomEvent.getClientX(e)
     const y = DomEvent.getClientY(e)
-    const offset = util.getOffset(graph.container)
-    const origin = util.getScrollOrigin(null)
+    const offset = DomUtil.getOffset(graph.container)
+    const origin = DomUtil.getScrollOrigin(null)
 
     let elem = this.getEventSource(e)
     while (elem != null && elem !== graph.container) {
@@ -173,7 +168,7 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
       this.mouseUpHandler,
     )
 
-    if (detector.SUPPORT_TOUCH && !DomEvent.isMouseEvent(e)) {
+    if (Platform.SUPPORT_TOUCH && !DomEvent.isMouseEvent(e)) {
       this.eventSource = DomEvent.getSource(e) as HTMLElement
       DomEvent.addMouseListeners(
         this.eventSource,
@@ -262,9 +257,9 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
         x -= this.rateX * w
         y -= this.rateY * h
 
-        const offset = util.getDocumentScrollOrigin(document)
-        dragElem.style.left = util.toPx(x + offset.x)
-        dragElem.style.top = util.toPx(y + offset.y)
+        const offset = DomUtil.getDocumentScrollOrigin(document)
+        dragElem.style.left = DomUtil.toPx(x + offset.x)
+        dragElem.style.top = DomUtil.toPx(y + offset.y)
       } else {
         dragElem.style.display = 'none'
       }
@@ -303,14 +298,14 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
     const y = DomEvent.getClientY(e)
     const w = this.element.offsetWidth
     const h = this.element.offsetHeight
-    const offset = util.getOffset(this.element)
+    const offset = DomUtil.getOffset(this.element)
     this.rateX = (x - offset.x) / w
     this.rateY = (y - offset.y) / h
 
     this.dragElement = this.createDragElement(e)
     this.dragElement.style.position = 'absolute'
     this.dragElement.style.pointerEvents = 'none'
-    this.dragElement.style.zIndex = `${util.ensureValue(
+    this.dragElement.style.zIndex = `${ObjectExt.ensure(
       this.options.zIndex,
       9999,
     )}`
@@ -386,8 +381,8 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
   }
 
   protected onDragOver(graph: Graph, e: MouseEvent) {
-    const offset = util.getOffset(graph.container)
-    const origin = util.getScrollOrigin(graph.container)
+    const offset = DomUtil.getOffset(graph.container)
+    const origin = DomUtil.getScrollOrigin(graph.container)
     let x = DomEvent.getClientX(e) - offset.x + origin.x - graph.panX
     let y = DomEvent.getClientY(e) - offset.y + origin.y - graph.panY
 
@@ -440,8 +435,8 @@ export class Dnd<T> extends Disablable<Dnd.EventArgMap<T>> {
       }
 
       this.previewElement.style.display = ''
-      this.previewElement.style.left = util.toPx(Math.round(x))
-      this.previewElement.style.top = util.toPx(Math.round(y))
+      this.previewElement.style.left = DomUtil.toPx(Math.round(x))
+      this.previewElement.style.top = DomUtil.toPx(Math.round(y))
     }
 
     this.currentPoint = new Point(x, y)

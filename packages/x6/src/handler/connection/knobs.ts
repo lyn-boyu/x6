@@ -1,10 +1,11 @@
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
+import { DomUtil, DomEvent } from '../../dom'
+import { Disposable } from '../../entity'
 import { State } from '../../core/state'
 import { ImageShape } from '../../shape'
-import { Rectangle, Point } from '../../struct'
 import { ConnectionHandler } from './handler'
 import { getConnectionIconOptions } from './option'
-import { Disposable, MouseEventEx, DomEvent } from '../../common'
+import { MouseEventEx } from '../mouse-event'
 
 export class Knobs extends Disposable {
   private icon: ImageShape | null
@@ -60,14 +61,14 @@ export class Knobs extends Disposable {
       icon.preserveImageAspect = false
       icon.cursor = options.cursor
 
-      if (util.hasHtmlLabel(state) || options.toFront) {
+      if (State.hasHtmlLabel(state) || options.toFront) {
         icon.dialect = 'html'
         icon.init(this.graph.container)
       } else {
         icon.dialect = 'svg'
         icon.init(this.graph.view.getOverlayPane())
         if (options.toBack) {
-          util.toBack(icon.elem)
+          DomUtil.toBack(icon.elem)
         }
       }
 
@@ -77,7 +78,7 @@ export class Knobs extends Disposable {
         if (!DomEvent.isConsumed(evt)) {
           this.icon = icon
           this.graph.dispatchMouseEvent(
-            DomEvent.MOUSE_DOWN,
+            'mouseDown',
             new MouseEventEx(evt, getState()),
           )
         }
@@ -189,10 +190,10 @@ export class Knobs extends Disposable {
       cx = size.width !== 0 ? state.bounds.x + (size.width * s) / 2 : cx
       cy = size.height !== 0 ? state.bounds.y + (size.height * s) / 2 : cy
 
-      const rot = util.getRotation(state)
+      const rot = State.getRotation(state)
       if (rot !== 0) {
         const ct = state.bounds.getCenter()
-        const pt = util.rotatePoint(new Point(cx, cy), rot, ct)
+        const pt = new Point(cx, cy).rotate(rot, ct)
         cx = pt.x
         cy = pt.y
       }
@@ -211,7 +212,7 @@ export class Knobs extends Disposable {
     }
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     this.destroyIcons()
   }

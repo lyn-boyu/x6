@@ -1,4 +1,4 @@
-import { util, Shape } from '@antv/x6'
+import { Shape, ObjectExt } from '@antv/x6'
 
 export class LinkShape extends Shape.ArrowConnector {
   defaultWidth = 4
@@ -18,7 +18,7 @@ export class LinkShape extends Shape.ArrowConnector {
 
   getEdgeWidth() {
     return (
-      util.getNumber(this.style, 'width', this.defaultWidth) +
+      ObjectExt.getNumber(this.style, 'width', this.defaultWidth) +
       Math.max(0, this.strokeWidth - 1)
     )
   }

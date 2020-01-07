@@ -1,10 +1,9 @@
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
+import { Disposable } from '../../entity'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Graph } from '../../graph'
 import { Polyline } from '../../shape'
-import { Disposable } from '../../common'
-import { Rectangle, Point } from '../../struct'
 
 export class Guide extends Disposable {
   graph: Graph
@@ -75,7 +74,7 @@ export class Guide extends Disposable {
       guide.dashed = style.dashed
       guide.elem!.style.visibility = ''
 
-      util.applyClassName(
+      Polyline.applyClassName(
         guide,
         this.graph.prefixCls,
         `guide ${horizontal ? 'horizontal' : 'vertical'}`,
@@ -328,7 +327,7 @@ export class Guide extends Disposable {
     }
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     if (this.guideX) {
       this.guideX.dispose()

@@ -1,10 +1,11 @@
-import * as util from '../util'
+import { ObjectExt } from '../util'
+import { Point, Rectangle } from '../geometry'
 import { globals } from '../option/global'
 import { Graph } from '../graph'
 import { Cell } from '../core/cell'
 import { State } from '../core/state'
-import { MouseEventEx, Disposable } from '../common'
-import { BaseHandler } from './handler-base'
+import { MouseEventEx } from './mouse-event'
+import { BaseHandler } from './base-handler'
 import { CellHighlight } from './cell-highlight'
 
 export class CellMarker extends BaseHandler {
@@ -24,19 +25,19 @@ export class CellMarker extends BaseHandler {
   constructor(graph: Graph, options: CellMarker.Options) {
     super(graph)
 
-    this.validColor = util.ensureValue(
+    this.validColor = ObjectExt.ensure(
       options.validColor,
       globals.defaultValidColor,
     )
-    this.invalidColor = util.ensureValue(
+    this.invalidColor = ObjectExt.ensure(
       options.invalidColor,
       globals.defaultInvalidColor,
     )
 
-    this.hotspotRate = util.ensureValue(options.hotspotRate, 0.3)
-    this.hotspotable = util.ensureValue(options.hotspotable, false)
-    this.minHotspotSize = util.ensureValue(options.minHotspotSize, 8)
-    this.maxHotspotSize = util.ensureValue(options.maxHotspotSize, 0)
+    this.hotspotRate = ObjectExt.ensure(options.hotspotRate, 0.3)
+    this.hotspotable = ObjectExt.ensure(options.hotspotable, false)
+    this.minHotspotSize = ObjectExt.ensure(options.minHotspotSize, 8)
+    this.maxHotspotSize = ObjectExt.ensure(options.maxHotspotSize, 0)
 
     this.highlight = new CellHighlight(graph, options)
   }
@@ -150,7 +151,7 @@ export class CellMarker extends BaseHandler {
     // 在中心区域按下鼠标触发连线
     // 在边缘区域按下鼠标触发移动
     if (this.hotspotable) {
-      return util.isInHotspot(
+      return CellMarker.isInHotspot(
         state,
         e.getGraphX(),
         e.getGraphY(),
@@ -163,7 +164,7 @@ export class CellMarker extends BaseHandler {
     return true
   }
 
-  @Disposable.aop()
+  @BaseHandler.dispose()
   dispose() {
     this.highlight.dispose()
   }
@@ -180,5 +181,56 @@ export namespace CellMarker {
     hotspotRate?: number
     minHotspotSize?: number
     maxHotspotSize?: number
+  }
+}
+
+export namespace CellMarker {
+  export function isInHotspot(
+    state: State,
+    x: number,
+    y: number,
+    hotspotRate: number = 1,
+    minHotspotSize: number = 0,
+    maxHotspotSize: number = 0,
+  ) {
+    if (hotspotRate > 0) {
+      let cx = state.bounds.getCenterX()
+      let cy = state.bounds.getCenterY()
+      let w = state.bounds.width
+      let h = state.bounds.height
+
+      const start = (state.style.startSize || 0) * state.view.scale
+      if (start > 0) {
+        if (state.style.horizontal !== false) {
+          cy = state.bounds.y + start / 2
+          h = start
+        } else {
+          cx = state.bounds.x + start / 2
+          w = start
+        }
+      }
+
+      if (minHotspotSize >= 0) {
+        w = Math.max(minHotspotSize, w * hotspotRate)
+        h = Math.max(minHotspotSize, h * hotspotRate)
+      }
+
+      if (maxHotspotSize > 0) {
+        w = Math.min(w, maxHotspotSize)
+        h = Math.min(h, maxHotspotSize)
+      }
+
+      const rect = new Rectangle(cx - w / 2, cy - h / 2, w, h)
+      const rot = state.style.rotation || 0
+      if (rot !== 0) {
+        const cx = state.bounds.getCenter()
+        const pt = new Point(x, y).rotate(-rot, cx)
+        return rect.containsPoint(pt)
+      }
+
+      return rect.containsPoint({ x, y })
+    }
+
+    return true
   }
 }

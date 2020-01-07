@@ -1,7 +1,7 @@
-import * as util from '../util'
+import { NumberExt } from '../util'
+import { DomUtil, DomEvent } from '../dom'
 import { Graph } from '../graph'
-import { MouseEventEx, DomEvent, Disposable } from '../common'
-import { IMouseHandler } from '../handler'
+import { IMouseHandler, MouseEventEx } from '../handler'
 import { BaseManager } from './base-manager'
 
 export class PanningManager extends BaseManager {
@@ -130,7 +130,7 @@ export class PanningManager extends BaseManager {
 
   private createTimer() {
     const container = this.graph.container
-    this.scrollbars = util.hasScrollbars(container)
+    this.scrollbars = DomUtil.hasScrollbars(container)
     this.scrollLeft = container.scrollLeft
     this.scrollTop = container.scrollTop
 
@@ -230,13 +230,13 @@ export class PanningManager extends BaseManager {
 
     if (
       this.graph.useScrollbarsForPanning &&
-      util.hasScrollbars(this.container)
+      DomUtil.hasScrollbars(this.container)
     ) {
       const container = this.container
       const maxScrollLeft = container.scrollWidth - container.clientWidth
       const maxScrollTop = container.scrollHeight - container.clientHeight
-      const scrollLeft = util.clamp(px, 0, maxScrollLeft)
-      const scrollTop = util.clamp(py, 0, maxScrollTop)
+      const scrollLeft = NumberExt.clamp(px, 0, maxScrollLeft)
+      const scrollTop = NumberExt.clamp(py, 0, maxScrollTop)
       container.scrollLeft = scrollLeft
       container.scrollTop = scrollTop
     } else {
@@ -255,7 +255,7 @@ export class PanningManager extends BaseManager {
               child = next
             }
 
-            util.removeElement(this.shiftPreview1)
+            DomUtil.remove(this.shiftPreview1)
             this.shiftPreview1 = null
 
             this.container.appendChild(stage.parentNode!)
@@ -267,7 +267,7 @@ export class PanningManager extends BaseManager {
               child = next
             }
 
-            util.removeElement(this.shiftPreview2)
+            DomUtil.remove(this.shiftPreview2)
             this.shiftPreview2 = null
           }
         } else {
@@ -310,12 +310,12 @@ export class PanningManager extends BaseManager {
 
           this.shiftPreview1.style.left = `${px}px`
           this.shiftPreview1.style.top = `${py}px`
-          this.shiftPreview2!.style.left = util.toPx(px)
-          this.shiftPreview2!.style.top = util.toPx(py)
+          this.shiftPreview2!.style.left = DomUtil.toPx(px)
+          this.shiftPreview2!.style.top = DomUtil.toPx(py)
         }
       } else {
-        stage.style.left = util.toPx(px)
-        stage.style.top = util.toPx(py)
+        stage.style.left = DomUtil.toPx(px)
+        stage.style.top = DomUtil.toPx(py)
       }
 
       this.graph.panX = px
@@ -325,7 +325,7 @@ export class PanningManager extends BaseManager {
     this.triggerPanning()
   }
 
-  @Disposable.aop()
+  @BaseManager.dispose()
   dispose() {
     this.removeListeners()
   }

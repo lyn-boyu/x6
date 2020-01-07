@@ -1,9 +1,8 @@
-import * as util from '../../util'
+import { Point, Rectangle } from '../../geometry'
 import { Cell } from '../../core/cell'
 import { Graph } from '../../graph'
-import { MouseEventEx } from '../../common'
-import { Point, Rectangle } from '../../struct'
-import { MouseHandler } from '../handler-mouse'
+import { MouseEventEx } from '../mouse-event'
+import { MouseHandler } from '../mouse-handler'
 
 export function isValid(handler: MouseHandler, e: MouseEventEx) {
   return (
@@ -65,7 +64,7 @@ export function getDelta(
 ) {
   const graph = handler.graph
   const s = graph.view.scale
-  const p = util.clientToGraph(graph.container, e)
+  const p = graph.clientToGraph(e)
 
   return new Point(
     roundLength((p.x - origin.x) / s) * s,

@@ -1,8 +1,10 @@
-import * as util from '../../util'
+import { Point } from '../../geometry'
+import { DomEvent } from '../../dom'
+import { Disposable } from '../../entity'
 import { State } from '../../core/state'
-import { Point, Anchor } from '../../struct'
+import { Anchor } from '../../struct'
 import { Polyline, Shape } from '../../shape'
-import { Disposable, MouseEventEx, DomEvent } from '../../common'
+import { MouseEventEx } from '../mouse-event'
 import { AnchorHandler } from '../anchor/handler'
 import { AnchorTipHandler } from '../anchor/tip'
 import { ConnectionMarker } from './marker'
@@ -371,17 +373,22 @@ export class Preview extends Disposable {
     const perimeterFn = view.getPerimeterFunction(state)
 
     if (perimeterFn != null) {
-      const rot = util.getRotation(state)
+      const rot = State.getRotation(state)
       if (rot !== 0) {
         // tslint:disable-next-line
-        next = util.rotatePoint(next, -rot, center)
+        next = Point.rotate(next, -rot, center)
       }
 
-      let tmp = perimeterFn(view.getPerimeterBounds(state), state, next, false)
+      const tmp = perimeterFn(
+        view.getPerimeterBounds(state),
+        state,
+        next,
+        false,
+      )
 
       if (tmp != null) {
         if (rot !== 0) {
-          tmp = util.rotatePoint(tmp, rot, center)
+          tmp.rotate(rot, center)
         }
 
         result = tmp
@@ -569,7 +576,7 @@ export class Preview extends Disposable {
   }
 
   addWaypoint(e: MouseEventEx, mouseDownCounter: number) {
-    const point = util.clientToGraph(this.graph.container, e)
+    const point = this.graph.clientToGraph(e)
     const dx = Math.abs(point.x - this.sourcePoint!.x)
     const dy = Math.abs(point.y - this.sourcePoint!.y)
     const addPoint =
@@ -661,7 +668,7 @@ export class Preview extends Disposable {
     this.anchorHandler.reset()
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     if (this.previewShape != null) {
       this.previewShape.dispose()

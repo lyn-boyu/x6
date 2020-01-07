@@ -1,7 +1,8 @@
-import * as util from '../util'
-import { Style } from '../types'
+import { ArrayExt } from '../util'
+import { Point, Rectangle } from '../geometry'
 import { Cell } from '../core/cell'
-import { Point, Rectangle } from '../struct'
+import { State } from '../core/state'
+import { Style } from '../types'
 import { BaseManager } from './base-manager'
 
 export class CreationManager extends BaseManager {
@@ -324,7 +325,7 @@ export class CreationManager extends BaseManager {
    */
   addAllEdges(cells: Cell[]) {
     const merged = [...cells, ...this.getAllEdges(cells)]
-    return util.uniq<Cell>(merged)
+    return ArrayExt.uniq<Cell>(merged)
   }
 
   getAllEdges(cells: Cell[]) {
@@ -439,7 +440,7 @@ export class CreationManager extends BaseManager {
         if (geo != null && geo.points != null && state != null) {
           const t = this.view.translate
           const s = this.view.scale
-          const idx = util.findNearestSegment(
+          const idx = State.getNearestSegment(
             state,
             (dx + t.x) * s,
             (dy + t.y) * s,

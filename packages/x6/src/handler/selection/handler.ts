@@ -1,10 +1,11 @@
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Graph } from '../../graph'
+import { Dictionary } from '../../struct'
 import { NodeHandler } from '../node/handler'
 import { EdgeHandler } from '../edge/handler'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, Dictionary, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 
 export class SelectionHandler extends MouseHandler {
   protected cell: Cell | null
@@ -147,7 +148,7 @@ export class SelectionHandler extends MouseHandler {
     }
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
     this.graph.off(null, this.refreshHandler)

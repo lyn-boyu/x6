@@ -1,9 +1,9 @@
+import { Platform } from '../util'
+import { DomUtil, DomEvent } from '../dom'
+import { Point, Rectangle } from '../geometry'
 import * as sizeSensor from 'size-sensor'
-import * as util from '../util'
 import { Cell } from '../core/cell'
 import { Size } from '../types'
-import { Rectangle, Point } from '../struct'
-import { detector, Disposable, DomEvent } from '../common'
 import { BaseManager } from './base-manager'
 
 export class ViewportManager extends BaseManager {
@@ -178,7 +178,7 @@ export class ViewportManager extends BaseManager {
                   }
                 }
               } else {
-                bbox = Rectangle.clone(geo.bounds)
+                bbox = geo.bounds.clone()
                 if (this.model.isNode(parent) && cells.includes(parent)) {
                   const tmp = this.getBoundingBox([parent], false)
                   if (tmp != null) {
@@ -219,7 +219,7 @@ export class ViewportManager extends BaseManager {
 
   private autoTranslate: boolean
   sizeDidChangeInfinite() {
-    if (this.container && util.hasScrollbars(this.container)) {
+    if (this.container && DomUtil.hasScrollbars(this.container)) {
       const size = this.getPageSize()
       const pages = this.getPageLayout()
       const padding = this.getPagePadding()
@@ -281,7 +281,7 @@ export class ViewportManager extends BaseManager {
 
       if (
         this.graph.preferPageSize ||
-        (!detector.IS_IE && this.graph.pageVisible)
+        (!Platform.IS_IE && this.graph.pageVisible)
       ) {
         const size = this.getPreferredPageSize(
           bounds,
@@ -331,7 +331,7 @@ export class ViewportManager extends BaseManager {
 
   resetScrollbar() {
     const container = this.container
-    if (this.graph.infinite && util.hasScrollbars(container)) {
+    if (this.graph.infinite && DomUtil.hasScrollbars(container)) {
       if (this.graph.pageVisible) {
         const padding = this.getPagePadding()
         container.scrollLeft = Math.floor(
@@ -374,8 +374,8 @@ export class ViewportManager extends BaseManager {
         ? Math.min(this.graph.maxContainerSize.height, height)
         : height
 
-    this.container.style.width = util.toPx(Math.ceil(w))
-    this.container.style.height = util.toPx(Math.ceil(h))
+    this.container.style.width = DomUtil.toPx(Math.ceil(w))
+    this.container.style.height = DomUtil.toPx(Math.ceil(h))
   }
 
   private unbindSizeDetector: () => void
@@ -391,7 +391,7 @@ export class ViewportManager extends BaseManager {
       })
     }
 
-    if (detector.IS_IE) {
+    if (Platform.IS_IE) {
       DomEvent.addListener(this.container, 'selectstart', (e: MouseEvent) => {
         return (
           this.graph.isEditing() ||
@@ -401,7 +401,7 @@ export class ViewportManager extends BaseManager {
     }
   }
 
-  @Disposable.aop()
+  @BaseManager.dispose()
   dispose() {
     if (this.unbindSizeDetector != null) {
       this.unbindSizeDetector()

@@ -1,7 +1,7 @@
-import * as util from '../util'
+import { Point, Rectangle } from '../geometry'
 import { globals } from '../option'
 import { State } from '../core/state'
-import { Point, Rectangle, DirectionMask } from '../struct'
+import { DirectionMask } from '../enum'
 import { segment } from './segment'
 
 const orthBuffer = 10
@@ -207,7 +207,7 @@ export function orth(
   let rotation = 0
 
   if (sourceState != null) {
-    portDir[0] = util.getPortConstraints(
+    portDir[0] = State.getPortConstraints(
       sourceState,
       edgeState,
       true,
@@ -215,10 +215,8 @@ export function orth(
     )
     rotation = sourceState.style.rotation || 0
     if (rotation !== 0) {
-      const newRect = util.rotateRectangle(
-        new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight),
-        rotation,
-      )
+      const newRect = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight)
+      newRect.rotate(rotation)
       sourceX = newRect.x
       sourceY = newRect.y
       sourceWidth = newRect.width
@@ -227,7 +225,7 @@ export function orth(
   }
 
   if (targetState != null) {
-    portDir[1] = util.getPortConstraints(
+    portDir[1] = State.getPortConstraints(
       targetState,
       edgeState,
       false,
@@ -235,10 +233,8 @@ export function orth(
     )
     rotation = targetState.style.rotation || 0
     if (rotation !== 0) {
-      const newRect = util.rotateRectangle(
-        new Rectangle(targetX, targetY, targetWidth, targetHeight),
-        rotation,
-      )
+      const newRect = new Rectangle(targetX, targetY, targetWidth, targetHeight)
+      newRect.rotate(rotation)
       targetX = newRect.x
       targetY = newRect.y
       targetWidth = newRect.width
@@ -369,8 +365,8 @@ export function orth(
       ? DirectionMask.north
       : DirectionMask.south
 
-  horPref[1] = util.reversePortConstraints(horPref[0])
-  vertPref[1] = util.reversePortConstraints(vertPref[0])
+  horPref[1] = State.reversePortConstraints(horPref[0])
+  vertPref[1] = State.reversePortConstraints(vertPref[0])
 
   const preferredHorizDist =
     sourceLeftDist >= sourceRightDist ? sourceLeftDist : sourceRightDist
@@ -390,11 +386,11 @@ export function orth(
     }
 
     if ((horPref[i] & portDir[i]) === 0) {
-      horPref[i] = util.reversePortConstraints(horPref[i])
+      horPref[i] = State.reversePortConstraints(horPref[i])
     }
 
     if ((vertPref[i] & portDir[i]) === 0) {
-      vertPref[i] = util.reversePortConstraints(vertPref[i])
+      vertPref[i] = State.reversePortConstraints(vertPref[i])
     }
 
     prefOrdering[i][0] = vertPref[i]

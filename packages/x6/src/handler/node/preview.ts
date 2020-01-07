@@ -1,10 +1,12 @@
-import * as util from '../../util'
+import { Color } from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Angle, Point, Rectangle } from '../../geometry'
+import { Disposable } from '../../entity'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Handle } from '../handle'
 import { NodeHandler } from './handler'
-import { Disposable, MouseEventEx, DomEvent } from '../../common'
-import { Rectangle, Point } from '../../struct'
+import { MouseEventEx } from '../mouse-event'
 import { RectangleShape } from '../../shape'
 import { EdgeHandler } from '../edge/handler'
 import { applyResizePreviewStyle } from './option-resize'
@@ -92,7 +94,7 @@ export class Preview extends Disposable {
     this.updateBounds()
     this.selectionShape = this.createSelectionShape(this.bounds)
     this.selectionShape.pointerEvents = false
-    this.selectionShape.rotation = util.getRotation(this.state)
+    this.selectionShape.rotation = State.getRotation(this.state)
     this.selectionShape.init(this.graph.view.getOverlayPane())
 
     MouseEventEx.redirectMouseEvents(
@@ -162,7 +164,7 @@ export class Preview extends Disposable {
             this.parentHighlight = this.createParentHighlight(pstate.bounds)
             this.parentHighlight.dialect = 'svg'
             this.parentHighlight.pointerEvents = false
-            this.parentHighlight.rotation = util.getRotation(pstate)
+            this.parentHighlight.rotation = State.getRotation(pstate)
             this.parentHighlight.init(this.graph.view.getOverlayPane())
           }
         }
@@ -171,11 +173,11 @@ export class Preview extends Disposable {
   }
 
   protected hideSelectionShape() {
-    util.hideElement(this.selectionShape!.elem)
+    DomUtil.hide(this.selectionShape!.elem)
   }
 
   protected showSelectionShape() {
-    util.showElement(this.selectionShape!.elem)
+    DomUtil.show(this.selectionShape!.elem)
   }
 
   protected updateMinBounds() {
@@ -252,8 +254,8 @@ export class Preview extends Disposable {
     return (
       // returns true if the shape is transparent.
       this.state.shape != null &&
-      !util.isValidColor(this.state.shape.fillColor) &&
-      !util.isValidColor(this.state.shape.strokeColor)
+      !Color.isValid(this.state.shape.fillColor) &&
+      !Color.isValid(this.state.shape.strokeColor)
     )
   }
 
@@ -467,7 +469,7 @@ export class Preview extends Disposable {
     }
 
     if (this.previewShape) {
-      if (util.hasHtmlLabel(this.state)) {
+      if (State.hasHtmlLabel(this.state)) {
         this.previewShape.dialect = 'html'
         this.previewShape.init(this.graph.container)
       } else {
@@ -536,7 +538,7 @@ export class Preview extends Disposable {
 
   refresh() {
     if (this.selectionShape != null) {
-      this.selectionShape.rotation = util.getRotation(this.state)
+      this.selectionShape.rotation = State.getRotation(this.state)
     }
 
     if (this.edgeHandlers != null) {
@@ -586,10 +588,10 @@ export class Preview extends Disposable {
     const p = e.getGraphPos()
     const c = this.state.bounds.getCenter()
     const geo = this.graph.getCellGeometry(this.state.cell)!
-    const rot = util.toRad(util.getRotation(this.state))
+    const rad = Angle.toRad(State.getRotation(this.state))
 
-    let cos = Math.cos(-rot)
-    let sin = Math.sin(-rot)
+    let cos = Math.cos(-rad)
+    let sin = Math.sin(-rad)
 
     let dx = p.x - this.startX
     let dy = p.y - this.startY
@@ -638,8 +640,7 @@ export class Preview extends Disposable {
           if (max == null) {
             max = tmp
           } else {
-            max = max.clone()
-            max.intersect(tmp)
+            max = max.intersect(tmp)
           }
         }
       }
@@ -693,8 +694,8 @@ export class Preview extends Disposable {
       this.bounds.y += this.state.bounds.y - this.parentState.bounds.y
     }
 
-    cos = Math.cos(rot)
-    sin = Math.sin(rot)
+    cos = Math.cos(rad)
+    sin = Math.sin(rad)
 
     const c2 = this.bounds.getCenter()
 
@@ -841,13 +842,13 @@ export class Preview extends Disposable {
 
   getRotationForRedraw() {
     return this.currentDeg == null
-      ? util.getRotation(this.state)
+      ? State.getRotation(this.state)
       : this.currentDeg
   }
 
   getRotation() {
     if (this.currentDeg != null) {
-      return this.currentDeg - util.getRotation(this.state)
+      return this.currentDeg - State.getRotation(this.state)
     }
     return 0
   }
@@ -885,7 +886,7 @@ export class Preview extends Disposable {
     this.overlayCursor = null
   }
 
-  @Disposable.aop()
+  @Disposable.dispose()
   dispose() {
     if (this.selectionShape != null) {
       this.selectionShape.dispose()

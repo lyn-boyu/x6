@@ -14,10 +14,11 @@
     "src": "src/"
   },
   "keywords": [
-    "x6",
     "shape",
     "react",
-    "render"
+    "render",
+    "x6",
+    "antv"
   ],
   "scripts": {
     "clean:es": "rimraf ./es",
@@ -25,7 +26,7 @@
     "clean": "run-p clean:es clean:lib",
     "lint": "tslint -c tslint.json -p tsconfig.json --fix",
     "watch": "watch 'yarn build' ./src",
-    "build:lib": "tsc",
+    "build:lib": "tsc --module commonjs --target es5 --outDir ./lib",
     "build:es": "tsc --module es2015 --target es2015 --outDir ./es",
     "build": "run-p build:lib build:es",
     "prebuild": "run-s lint clean",
@@ -38,6 +39,11 @@
       "git add"
     ]
   },
+  "peerDependencies": {
+    "@antv/x6": "*",
+    "react": ">=16.8.6",
+    "react-dom": ">=16.8.6"
+  },
   "devDependencies": {
     "@types/react": "^16.9.13",
     "lint-staged": "^9.2.1",
@@ -48,17 +54,10 @@
     "sinon": "^7.5.0",
     "ts-jest": "^24.0.2",
     "tslint": "^5.18.0",
-    "tslint-config-airbnb": "^5.11.2",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-eslint-rules": "^5.4.0",
     "typescript": "^3.5.3",
     "watch": "^1.0.2"
   },
-  "peerDependencies": {
-    "@antv/x6": "*",
-    "react": ">=16.8.6",
-    "react-dom": ">=16.8.6"
-  },
+
   "author": {
     "name": "bubkoo",
     "email": "bubkoo.wy@gmail.com"
@@ -69,10 +68,7 @@
   "bugs": {
     "url": "https://github.com/antvis/x6/issues"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/antvis/x6.git"
-  },
+  "repository": "https://github.com/antvis/x6/tree/master/packages/x6-react-shape",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"

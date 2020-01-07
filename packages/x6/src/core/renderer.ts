@@ -1,9 +1,11 @@
-import * as util from '../util'
+import { DomUtil, DomEvent } from '../dom'
+import { Angle, Point, Rectangle } from '../geometry'
+import { Platform, ObjectExt, NumberExt } from '../util'
 import { State } from './state'
 import { Dialect } from '../types'
 import { globals } from '../option'
-import { Rectangle, Point, Overlay } from '../struct'
-import { detector, Dictionary, DomEvent, MouseEventEx } from '../common'
+import { Overlay, Dictionary } from '../struct'
+import { MouseEventEx } from '../handler'
 import {
   Shape,
   Stencil,
@@ -90,7 +92,7 @@ export class Renderer {
       // update shape for style changed
       !force &&
       state.shape != null &&
-      (!util.equalEntries(state.shape.style, state.style) ||
+      (!ObjectExt.equals(state.shape.style, state.style) ||
         this.hasPlaceholderStyles(state))
     ) {
       state.shape.resetStyle()
@@ -361,7 +363,7 @@ export class Renderer {
       },
     )
 
-    if (detector.SUPPORT_TOUCH) {
+    if (Platform.SUPPORT_TOUCH) {
       DomEvent.addListener(elem, 'touchend', evt => {
         overlay.trigger('click', { cell: state.cell })
       })
@@ -380,15 +382,12 @@ export class Renderer {
 
       if (
         (graph.dialect !== 'svg' &&
-          util.getNodeName(DomEvent.getSource(e)) === 'img') ||
-        detector.SUPPORT_TOUCH
+          DomUtil.getNodeName(DomEvent.getSource(e)) === 'img') ||
+        Platform.SUPPORT_TOUCH
       ) {
-        const x = DomEvent.getClientX(e)
-        const y = DomEvent.getClientY(e)
-
         // Dispatches the drop event to the graph which
         // consumes and executes the source function
-        const pt = util.clientToGraph(graph.container, x, y)
+        const pt = graph.clientToGraph(e)
         result = graph.view.getState(graph.getCellAt(pt.x, pt.y))!
       }
 
@@ -482,7 +481,7 @@ export class Renderer {
     // it is obscured by the HTML label that overlaps the cell.
     const isForceHtml =
       graph.isHtmlLabel(state.cell) &&
-      detector.NO_FOREIGNOBJECT &&
+      Platform.NO_FOREIGNOBJECT &&
       graph.dialect === 'svg'
 
     if (isForceHtml) {
@@ -496,7 +495,7 @@ export class Renderer {
     const elem = control.elem!
 
     // Workaround for missing click event on iOS is to check tolerance below
-    if (clickHandler != null && !detector.IS_IOS) {
+    if (clickHandler != null && !Platform.IS_IOS) {
       if (graph.isEnabled()) {
         elem.style.cursor = 'pointer'
       }
@@ -533,7 +532,7 @@ export class Renderer {
       )
 
       // Uses capture phase for event interception to stop bubble phase
-      if (clickHandler != null && detector.IS_IOS) {
+      if (clickHandler != null && Platform.IS_IOS) {
         DomEvent.addListener(elem, 'touchend', (e: TouchEvent) => {
           if (first != null) {
             const tol = graph.tolerance
@@ -564,7 +563,7 @@ export class Renderer {
 
     const isForceHtml =
       state.view.graph.isHtmlLabel(state.cell) ||
-      (txt != null && util.isHtmlElem(txt))
+      (txt != null && DomUtil.isHtmlElement(txt))
 
     const dialect: Dialect = isForceHtml ? 'html' : state.view.graph.dialect
     const overflow = state.style.overflow || 'visible'
@@ -583,7 +582,7 @@ export class Renderer {
     if (
       state.text == null &&
       txt != null &&
-      (util.isHtmlElem(txt) || (txt as string).length > 0)
+      (DomUtil.isHtmlElement(txt) || (txt as string).length > 0)
     ) {
       this.createLabel(state, txt)
     } else if (
@@ -661,7 +660,7 @@ export class Renderer {
     if (state.style.fontSize == null || state.style.fontSize > 0) {
       const isForceHtml =
         graph.isHtmlLabel(state.cell) ||
-        (value != null && util.isHtmlElem(value))
+        (value != null && DomUtil.isHtmlElement(value))
 
       state.text = new this.defaultTextShape(value, new Rectangle(), {
         align: state.style.align || 'center',
@@ -704,13 +703,10 @@ export class Renderer {
       const getState = (e: MouseEvent) => {
         let result: State = state
 
-        if (detector.SUPPORT_TOUCH || forceGetCell) {
-          const x = DomEvent.getClientX(e)
-          const y = DomEvent.getClientY(e)
-
+        if (Platform.SUPPORT_TOUCH || forceGetCell) {
           // Dispatches the drop event to the graph which
           // consumes and executes the source function
-          const pt = util.clientToGraph(graph.container, x, y)
+          const pt = graph.clientToGraph(e)
           result = graph.view.getState(graph.getCellAt(pt.x, pt.y))!
         }
 
@@ -727,7 +723,7 @@ export class Renderer {
             )
             forceGetCell =
               graph.dialect !== 'svg' &&
-              util.getNodeName(DomEvent.getSource(e)) === 'img'
+              DomUtil.getNodeName(DomEvent.getSource(e)) === 'img'
           }
         },
         (e: MouseEvent) => {
@@ -762,7 +758,7 @@ export class Renderer {
   }
 
   protected initializeLabel(state: State, shape: Shape) {
-    if (detector.NO_FOREIGNOBJECT && shape.dialect !== 'svg') {
+    if (Platform.NO_FOREIGNOBJECT && shape.dialect !== 'svg') {
       shape.init(state.view.graph.container)
     } else {
       shape.init(state.view.getDrawPane())
@@ -954,12 +950,10 @@ export class Renderer {
       const cx = state.bounds.getCenterX()
       const cy = state.bounds.getCenterY()
       if (bounds.x !== cx || bounds.y !== cy) {
-        const pt = util.rotatePoint(
-          new Point(bounds.x, bounds.y),
+        const pt = new Point(bounds.x, bounds.y).rotate(
           theta,
           new Point(cx, cy),
         )
-
         bounds.x = pt.x
         bounds.y = pt.y
       }
@@ -1010,8 +1004,8 @@ export class Renderer {
   protected redrawOverlays(state: State, forced?: boolean) {
     this.createOverlays(state)
     if (state.overlays != null) {
-      const rot = util.mod(util.getRotation(state), 90)
-      const rad = util.toRad(rot)
+      const rot = NumberExt.mod(State.getRotation(state), 90)
+      const rad = Angle.toRad(rot)
       const cos = Math.cos(rad)
       const sin = Math.sin(rad)
 
@@ -1023,7 +1017,7 @@ export class Renderer {
             let cx = bounds.getCenterX()
             let cy = bounds.getCenterY()
 
-            const point = util.rotatePointEx(
+            const point = Point.rotateEx(
               new Point(cx, cy),
               cos,
               sin,
@@ -1101,11 +1095,7 @@ export class Renderer {
           }
 
           if (rot !== 0) {
-            const p = util.rotatePoint(
-              new Point(cx, cy),
-              rot,
-              state.bounds.getCenter(),
-            )
+            const p = new Point(cx, cy).rotate(rot, state.bounds.getCenter())
             cx = p.x
             cy = p.y
           }

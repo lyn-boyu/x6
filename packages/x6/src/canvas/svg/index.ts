@@ -1,6 +1,7 @@
 /* tslint:disable:no-parameter-reassignment */
 
-import * as util from '../../util'
+import { Url } from '../../util'
+import { DomUtil } from '../../dom'
 import { SvgCanvas2DText } from './text'
 
 export class SvgCanvas2D extends SvgCanvas2DText {
@@ -12,7 +13,7 @@ export class SvgCanvas2D extends SvgCanvas2DText {
   rect(x: number, y: number, w: number, h: number) {
     const state = this.state
     this.elem = this.createElement('rect')
-    util.setAttributes(this.elem, {
+    DomUtil.setAttributes(this.elem, {
       x: this.format((x + state.tx) * state.scale),
       y: this.format((y + state.ty) * state.scale),
       width: this.format(w * state.scale),
@@ -26,7 +27,7 @@ export class SvgCanvas2D extends SvgCanvas2DText {
     w: number,
     h: number,
     dx: number,
-    dy: number
+    dy: number,
   ) {
     this.rect(x, y, w, h)
 
@@ -42,7 +43,7 @@ export class SvgCanvas2D extends SvgCanvas2DText {
   ellipse(x: number, y: number, w: number, h: number) {
     const state = this.state
     this.elem = this.createElement('ellipse')
-    util.setAttributes(this.elem, {
+    DomUtil.setAttributes(this.elem, {
       cx: this.format((x + w / 2 + state.tx) * state.scale),
       cy: this.format((y + h / 2 + state.ty) * state.scale),
       rx: (w / 2) * state.scale,
@@ -77,16 +78,16 @@ export class SvgCanvas2D extends SvgCanvas2DText {
     src: string,
     aspect: boolean = true,
     flipH: boolean = false,
-    flipV: boolean = false
+    flipV: boolean = false,
   ) {
     const state = this.state
 
-    src = util.toAbsoluteUrl(src)
+    src = Url.toAbsolute(src)
     x += state.tx
     y += state.ty
 
     const img = this.createElement('image')
-    util.setAttributes(img, {
+    DomUtil.setAttributes(img, {
       x: this.format(x * state.scale) + this.imageOffset,
       y: this.format(y * state.scale) + this.imageOffset,
       width: this.format(w * state.scale),
@@ -176,7 +177,7 @@ export class SvgCanvas2D extends SvgCanvas2DText {
 
       if (deg !== 0) {
         state.transform += `rotate(${this.format(deg)},${this.format(
-          cx
+          cx,
         )},${this.format(cy)})`
       }
 

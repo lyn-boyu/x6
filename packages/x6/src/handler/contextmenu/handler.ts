@@ -1,7 +1,7 @@
-import * as util from '../../util'
+import { DomEvent, DomUtil } from '../../dom'
 import { Graph } from '../../graph'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, DomEvent, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 import { ShowContextMenuArgs } from './option'
 
 export class ContextMenuHandler extends MouseHandler {
@@ -118,7 +118,7 @@ export class ContextMenuHandler extends MouseHandler {
       this.graph.hideTooltip()
 
       if (this.doShow) {
-        const origin = util.getScrollOrigin(document.body)
+        const origin = DomUtil.getScrollOrigin(document.body)
         this.doShow.call(this.graph, {
           cell,
           e: e.getEvent(),
@@ -144,7 +144,7 @@ export class ContextMenuHandler extends MouseHandler {
     return this.showing
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
     this.graph.off('gesture', this.gestureHandler)

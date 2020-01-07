@@ -1,10 +1,10 @@
-import * as util from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Graph } from '../../graph'
-import { MouseHandler } from '../handler-mouse'
+import { MouseHandler } from '../mouse-handler'
 import { ShowTooltipArgs } from './option'
-import { DomEvent, MouseEventEx, Disposable } from '../../common'
+import { MouseEventEx } from '../mouse-event'
 
 export class TooltipHandler extends MouseHandler {
   ignoreTouchEvents: boolean = true
@@ -121,7 +121,8 @@ export class TooltipHandler extends MouseHandler {
   protected validateTooltip(tip?: string | HTMLElement | null) {
     return (
       tip != null &&
-      ((typeof tip === 'string' && tip.length > 0) || util.isHtmlElem(tip))
+      ((typeof tip === 'string' && tip.length > 0) ||
+        DomUtil.isHtmlElement(tip))
     )
   }
 
@@ -211,7 +212,7 @@ export class TooltipHandler extends MouseHandler {
     this.doHide && this.doHide.call(this.graph)
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
   }

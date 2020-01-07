@@ -1,6 +1,6 @@
+import { DomUtil } from '../dom'
 import { Cell } from '../core/cell'
 import { Graph } from '../graph'
-import { isHtmlElem } from '../util'
 
 export class Multiplicity {
   constructor(options: Multiplicity.Options) {
@@ -167,7 +167,7 @@ export class Multiplicity {
   ) {
     if (data != null) {
       if (!isNaN(data.nodeType)) {
-        return isHtmlElem(data, nodeName, attrName, attrValue)
+        return DomUtil.isHtmlElement(data, nodeName, attrName, attrValue)
       }
 
       return data === nodeName

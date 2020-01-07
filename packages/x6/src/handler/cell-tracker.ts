@@ -1,8 +1,8 @@
 import { Cell } from '../core/cell'
 import { Graph } from '../graph'
-import { MouseEventEx, Disposable } from '../common'
 import { CellMarker } from './cell-marker'
-import { IMouseHandler } from './handler-mouse'
+import { MouseEventEx } from './mouse-event'
+import { IMouseHandler } from './mouse-handler'
 
 export class CellTracker extends CellMarker implements IMouseHandler {
   constructor(
@@ -29,7 +29,7 @@ export class CellTracker extends CellMarker implements IMouseHandler {
 
   mouseUp(e: MouseEventEx, sender: any) {}
 
-  @Disposable.aop()
+  @CellMarker.dispose()
   dispose() {
     this.graph.removeHandler(this)
   }

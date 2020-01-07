@@ -1,10 +1,10 @@
-import * as util from '../util'
+import { Point } from '../geometry'
+import { DomEvent } from '../dom'
+import { Platform, Color } from '../util'
 import { Cell } from '../core/cell'
 import { State } from '../core/state'
-import { Point } from '../struct'
 import { RectangleShape } from '../shape'
-import { detector, DomEvent, MouseEventEx } from '../common'
-import { IMouseHandler } from '../handler'
+import { MouseEventEx, IMouseHandler } from '../handler'
 import { BaseManager } from './base-manager'
 
 export class EventLoopManager extends BaseManager {
@@ -62,7 +62,7 @@ export class EventLoopManager extends BaseManager {
     const s = this.view.scale
     const t = this.view.translate
     const o = addOffset ? this.graph.getGridSize() / 2 : 0
-    const p = util.clientToGraph(this.graph.container, e)
+    const p = this.graph.clientToGraph(e)
 
     p.x = this.graph.snap(p.x / s - t.x - o)
     p.y = this.graph.snap(p.y / s - t.y - o)
@@ -72,7 +72,7 @@ export class EventLoopManager extends BaseManager {
 
   protected updateMouseEvent(e: MouseEventEx, eventName: string) {
     if (e.graphX == null || e.graphY == null) {
-      const p = util.clientToGraph(this.graph.container, e)
+      const p = this.graph.clientToGraph(e)
 
       e.graphX = p.x - this.graph.panX
       e.graphY = p.y - this.graph.panY
@@ -87,7 +87,7 @@ export class EventLoopManager extends BaseManager {
           state.shape.drawBackground !==
             RectangleShape.prototype.drawBackground ||
           state.style.pointerEvents !== false ||
-          util.isValidColor(state.shape.fillColor)
+          Color.isValid(state.shape.fillColor)
 
         e.state = this.graph.view.getState(
           this.graph.getCellAt(p.x, p.y, null, false, false, ignoreFn),
@@ -99,7 +99,7 @@ export class EventLoopManager extends BaseManager {
   }
 
   protected getStateForTouchEvent(e: TouchEvent) {
-    const p = util.clientToGraph(this.graph.container, e)
+    const p = this.graph.clientToGraph(e)
     return this.graph.view.getState(this.graph.getCellAt(p.x, p.y))
   }
 
@@ -132,14 +132,14 @@ export class EventLoopManager extends BaseManager {
       this.mouseUpRedirect = null
       this.mouseMoveRedirect = null
     } else if (
-      !detector.IS_CHROME &&
+      !Platform.IS_CHROME &&
       this.eventSource != null &&
       this.eventSource !== eventSource
     ) {
       result = true
     } else if (
       eventName === DomEvent.MOUSE_DOWN &&
-      detector.SUPPORT_TOUCH &&
+      Platform.SUPPORT_TOUCH &&
       !isMouseEvent &&
       !DomEvent.isPenEvent(evt)
     ) {
@@ -190,7 +190,7 @@ export class EventLoopManager extends BaseManager {
       this.isMouseTrigger = isMouseEvent
     } else if (
       !result &&
-      (((!detector.IS_FIREFOX || eventName !== DomEvent.MOUSE_MOVE) &&
+      (((!Platform.IS_FIREFOX || eventName !== DomEvent.MOUSE_MOVE) &&
         this.isMouseDown &&
         this.isMouseTrigger !== isMouseEvent) ||
         (eventName === DomEvent.MOUSE_DOWN && this.isMouseDown) ||
@@ -227,7 +227,7 @@ export class EventLoopManager extends BaseManager {
       this.ignoreMouseEvents = eventName !== DomEvent.MOUSE_UP
       result = true
     } else if (
-      detector.IS_FIREFOX &&
+      Platform.IS_FIREFOX &&
       !isMouseEvent &&
       eventName === DomEvent.MOUSE_UP
     ) {
@@ -297,7 +297,7 @@ export class EventLoopManager extends BaseManager {
     if (
       (!this.graph.nativeDblClickEnabled && !DomEvent.isPopupTrigger(evt)) ||
       (this.graph.doubleTapEnabled &&
-        detector.SUPPORT_TOUCH &&
+        Platform.SUPPORT_TOUCH &&
         (DomEvent.isTouchEvent(evt) || DomEvent.isPenEvent(evt)))
     ) {
       const currentTime = new Date().getTime()
@@ -344,7 +344,7 @@ export class EventLoopManager extends BaseManager {
         const valid =
           lastTouchCell != null ||
           ((DomEvent.isTouchEvent(evt) || DomEvent.isPenEvent(evt)) &&
-            (detector.IS_CHROME || detector.IS_SAFARI))
+            (Platform.IS_CHROME || Platform.IS_SAFARI))
 
         if (
           valid &&
@@ -370,11 +370,11 @@ export class EventLoopManager extends BaseManager {
     this.graph.trigger('mouseEvent', { eventName, e, sender })
 
     if (
-      detector.IS_OPERA ||
-      detector.IS_SAFARI ||
-      detector.IS_CHROME ||
-      detector.IS_IE11 ||
-      detector.IS_IE ||
+      Platform.IS_OPERA ||
+      Platform.IS_SAFARI ||
+      Platform.IS_CHROME ||
+      Platform.IS_IE11 ||
+      Platform.IS_IE ||
       evt.target !== this.graph.container
     ) {
       if (

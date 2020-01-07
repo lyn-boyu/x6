@@ -1,10 +1,11 @@
-import * as util from '../util'
+import { ObjectExt } from '../util'
+import { DomUtil } from '../dom'
 import { globals } from '../option/global'
 import { Shape } from '../shape'
 import { Graph } from '../graph'
 import { State } from '../core/state'
-import { MouseEventEx, Disposable } from '../common'
-import { BaseHandler } from './handler-base'
+import { MouseEventEx } from './mouse-event'
+import { BaseHandler } from './base-handler'
 
 export class CellHighlight extends BaseHandler {
   state: State | null
@@ -24,17 +25,17 @@ export class CellHighlight extends BaseHandler {
   constructor(graph: Graph, options: CellHighlight.Options = {}) {
     super(graph)
 
-    this.className = util.ensureValue(options.className, null)
-    this.cellClassName = util.ensureValue(options.cellClassName, null)
-    this.highlightColor = util.ensureValue(
+    this.className = ObjectExt.ensure(options.className, null)
+    this.cellClassName = ObjectExt.ensure(options.cellClassName, null)
+    this.highlightColor = ObjectExt.ensure(
       options.highlightColor,
       globals.defaultValidColor,
     )
-    this.dashed = util.ensureValue(options.dashed, false)
-    this.strokeWidth = util.ensureValue(options.strokeWidth, 3)
-    this.opacity = util.ensureValue(options.opacity, 1)
-    this.spacing = util.ensureValue(options.spacing, 2)
-    this.topMost = util.ensureValue(options.keepOnTop, false)
+    this.dashed = ObjectExt.ensure(options.dashed, false)
+    this.strokeWidth = ObjectExt.ensure(options.strokeWidth, 3)
+    this.opacity = ObjectExt.ensure(options.opacity, 1)
+    this.spacing = ObjectExt.ensure(options.spacing, 2)
+    this.topMost = ObjectExt.ensure(options.keepOnTop, false)
 
     this.repaintHandler = () => {
       if (this.state != null) {
@@ -94,7 +95,7 @@ export class CellHighlight extends BaseHandler {
     this.repaint()
 
     if (!this.topMost && this.shape != null) {
-      util.toBack(this.shape.elem)
+      DomUtil.toBack(this.shape.elem)
     }
   }
 
@@ -106,8 +107,8 @@ export class CellHighlight extends BaseHandler {
         this.shape.points = this.state.absolutePoints
         this.shape.outline = false
       } else {
-        this.shape.bounds = this.state.bounds.clone().grow(this.spacing)
-        this.shape.rotation = util.getRotation(this.state)
+        this.shape.bounds = this.state.bounds.clone().inflate(this.spacing)
+        this.shape.rotation = State.getRotation(this.state)
         this.shape.strokeWidth = this.strokeWidth / this.state.view.scale
         this.shape.outline = true
       }
@@ -168,7 +169,7 @@ export class CellHighlight extends BaseHandler {
     return hit
   }
 
-  @Disposable.aop()
+  @BaseHandler.dispose()
   dispose() {
     this.graph.view.off(null, this.resetHandler)
     this.graph.view.off(null, this.repaintHandler)

@@ -1,11 +1,11 @@
-import { Point } from '../../struct'
+import { Point } from '../../geometry'
 import { Style } from '../../types'
 import { Graph } from '../../graph'
 import { Cell } from '../../core/cell'
 import { State } from '../../core/state'
 import { Geometry } from '../../core/geometry'
-import { MouseHandler } from '../handler-mouse'
-import { MouseEventEx, Disposable } from '../../common'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 import { Knobs } from './knobs'
 import { Preview } from './preview'
 
@@ -479,7 +479,7 @@ export class ConnectionHandler extends MouseHandler<
     this.mouseDownCounter = 0
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.preview.dispose()
     this.knobs.dispose()

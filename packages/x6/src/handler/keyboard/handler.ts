@@ -1,8 +1,7 @@
-import * as util from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
 import { Graph } from '../../graph'
 import { Mousetrap } from './mousetrap'
-import { BaseHandler } from '../handler-base'
-import { DomEvent, Disposable } from '../../common'
+import { BaseHandler } from '../base-handler'
 
 export class KeyboardHandler extends BaseHandler {
   public readonly target: HTMLElement | Document
@@ -73,7 +72,7 @@ export class KeyboardHandler extends BaseHandler {
     }
 
     // Accepts events from inside the container
-    return util.isAncestorNode(this.graph.container, source)
+    return DomUtil.isAncestor(this.graph.container, source)
   }
 
   isEnabledForEvent(e: KeyboardEvent) {
@@ -89,7 +88,7 @@ export class KeyboardHandler extends BaseHandler {
     return this.graph.isEditing()
   }
 
-  @Disposable.aop()
+  @BaseHandler.dispose()
   dispose() {
     this.mousetrap.reset()
   }

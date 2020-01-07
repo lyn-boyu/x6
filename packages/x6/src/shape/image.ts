@@ -1,7 +1,8 @@
-import * as util from '../util'
+import { Rectangle } from '../geometry'
+import { DomUtil } from '../dom'
 import { RectangleShape } from './rectangle'
 import { SvgCanvas2D } from '../canvas'
-import { Rectangle, Overlay } from '../struct'
+import { Overlay } from '../struct'
 import { State } from '../core/state'
 
 export class ImageShape extends RectangleShape {
@@ -122,13 +123,13 @@ export class ImageShape extends RectangleShape {
       }
 
       if (this.rotation !== 0) {
-        util.setPrefixedStyle(
+        DomUtil.setPrefixedStyle(
           img.style,
           'transform',
           `rotate(${this.rotation}deg)`,
         )
       } else {
-        util.setPrefixedStyle(img.style, 'transform', '')
+        DomUtil.setPrefixedStyle(img.style, 'transform', '')
       }
 
       img.style.width = elem.style.width

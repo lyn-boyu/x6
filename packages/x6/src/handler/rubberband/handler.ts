@@ -1,8 +1,10 @@
-import * as util from '../../util'
+import { Platform } from '../../util'
+import { DomUtil, DomEvent } from '../../dom'
+import { Point, Rectangle } from '../../geometry'
 import { Graph } from '../../graph'
-import { MouseHandler } from '../handler-mouse'
-import { Rectangle, Point } from '../../struct'
-import { Disposable, MouseEventEx, DomEvent, detector } from '../../common'
+import { Shape } from '../../shape'
+import { MouseHandler } from '../mouse-handler'
+import { MouseEventEx } from '../mouse-event'
 import { getRubberbandStyle } from './option'
 
 export class RubberbandHandler extends MouseHandler {
@@ -79,8 +81,8 @@ export class RubberbandHandler extends MouseHandler {
   }
 
   protected getPosition(e: MouseEventEx) {
-    const origin = util.getScrollOrigin(this.graph.container)
-    const offset = util.getOffset(this.graph.container)
+    const origin = DomUtil.getScrollOrigin(this.graph.container)
+    const offset = DomUtil.getOffset(this.graph.container)
 
     origin.x -= offset.x
     origin.y -= offset.y
@@ -109,11 +111,9 @@ export class RubberbandHandler extends MouseHandler {
 
   protected start(x: number, y: number) {
     this.origin = new Point(x, y)
-
-    const container = this.graph.container
     const createEvent = (e: MouseEvent) => {
       const me = new MouseEventEx(e)
-      const pt = util.clientToGraph(container, me)
+      const pt = this.graph.clientToGraph(me)
       me.graphX = pt.x
       me.graphY = pt.y
       return me
@@ -129,7 +129,7 @@ export class RubberbandHandler extends MouseHandler {
 
     // Workaround for rubberband stopping if the
     // mouse leaves the container in Firefox
-    if (detector.IS_FIREFOX) {
+    if (Platform.IS_FIREFOX) {
       DomEvent.addMouseListeners(
         document,
         null,
@@ -152,7 +152,7 @@ export class RubberbandHandler extends MouseHandler {
         }
 
         // Clears selection while rubberbanding.
-        util.clearSelection()
+        DomUtil.clearSelection()
 
         this.update(x, y)
         e.consume()
@@ -201,7 +201,7 @@ export class RubberbandHandler extends MouseHandler {
         height: this.height,
       })
 
-      util.applyClassName(
+      Shape.applyClassName(
         this.div,
         this.graph.prefixCls,
         'rubberband',
@@ -213,10 +213,10 @@ export class RubberbandHandler extends MouseHandler {
       this.div.style.background = style.background
 
       this.div.style.position = 'absolute'
-      this.div.style.left = util.toPx(this.x)
-      this.div.style.top = util.toPx(this.y)
-      this.div.style.width = util.toPx(Math.max(1, this.width))
-      this.div.style.height = util.toPx(Math.max(1, this.height))
+      this.div.style.left = DomUtil.toPx(this.x)
+      this.div.style.top = DomUtil.toPx(this.y)
+      this.div.style.width = DomUtil.toPx(Math.max(1, this.width))
+      this.div.style.height = DomUtil.toPx(Math.max(1, this.height))
     }
   }
 
@@ -242,15 +242,15 @@ export class RubberbandHandler extends MouseHandler {
     if (this.div != null) {
       if (this.fadeOut) {
         const temp = this.div
-        util.setPrefixedStyle(temp.style, 'transition', 'all 0.2s linear')
+        DomUtil.setPrefixedStyle(temp.style, 'transition', 'all 0.2s linear')
         temp.style.pointerEvents = 'none'
         temp.style.opacity = '0'
 
         window.setTimeout(() => {
-          util.removeElement(temp)
+          DomUtil.remove(temp)
         }, 200)
       } else {
-        util.removeElement(this.div)
+        DomUtil.remove(this.div)
       }
     }
 
@@ -270,7 +270,7 @@ export class RubberbandHandler extends MouseHandler {
     this.div = null
   }
 
-  @Disposable.aop()
+  @MouseHandler.dispose()
   dispose() {
     this.graph.removeHandler(this)
     this.graph.off('pan', this.onPan)

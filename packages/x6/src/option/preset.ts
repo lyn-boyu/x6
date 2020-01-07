@@ -1,8 +1,8 @@
+import { Platform } from '../util'
 import * as images from '../assets/images'
 import { loop } from '../route/loop'
 import { Style } from '../types'
-import { detector } from '../common'
-import { PageSize } from '../struct'
+import { PageSize } from '../enum'
 import { Perimeter } from '../perimeter'
 import { FullOptions } from './rollup'
 import { globals } from './global'
@@ -131,7 +131,7 @@ export const preset: FullOptions = {
   constrainRelativeChildren: false,
   allowNegativeCoordinates: true,
   defaultOverlap: 0.5,
-  maxCellCountForHandle: detector.IS_IE ? 20 : 50,
+  maxCellCountForHandle: Platform.IS_IE ? 20 : 50,
 
   nodeStyle: {
     ...commonStyle,
